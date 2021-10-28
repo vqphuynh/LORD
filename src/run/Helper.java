@@ -1,0 +1,24 @@
+/*
+ * @author Van Quoc Phuong Huynh, FAW JKU
+ *
+ */
+
+package run;
+
+public class Helper {
+
+	public static void main(String[] args) {		
+		System.out.println("To run TrainTestSplitter, use the following command for help");
+		System.out.println("\tjava -cp ./Lord.jar run.TrainTestSplitter");
+		
+		System.out.println("To discretize data, use the following command for help");
+		System.out.println("\tjava -cp ./Lord.jar run.DiscretizationRun");
+		
+		System.out.println("To run JRIP rule learning, use the following command for help");
+		System.out.println("\tjava -cp ./Lord.jar run.JRIP");
+		
+		System.out.println("To run LORD, use the following command for help");
+		System.out.println("\tjava -cp ./Lord.jar run.LordRun");
+	}
+
+}
