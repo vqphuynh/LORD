@@ -5,6 +5,9 @@
 
 package rl;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -37,6 +40,42 @@ public class PPCTree {
 		this.root.children = null;
 		this.root = null;
 	}
+	
+	/**
+     * Store a tree with pre-order traverse
+     * </br>One node per line contains the following information: parent_node.pre : node.pre : node.pos : node.itemid : node.support_count
+     * @param fileName output file
+     * @return running time
+     * @throws IOException
+     */
+    public long storeTree(String fileName) throws IOException{
+    	// Remember start time
+    	long start = System.currentTimeMillis();
+    	
+    	BufferedWriter output = new BufferedWriter(new FileWriter(fileName));
+    	StringBuilder sb = new StringBuilder();
+    	
+    	output.write(sb.append(-1).append(':').append(root.pre).append(':').append(root.pos).append(':').
+    			append(root.itemID).append(':').append(root.count).append('\n').toString());
+    	
+    	for(PPCNode child : root.children) storeSubTree(child, output, sb);
+    	
+    	output.close();
+    	
+    	// Return time of storing tree
+        return System.currentTimeMillis() - start;
+    }
+    
+    /**
+     * Store a tree by pre-order traverse, this function will be called recursively
+     */
+    private static void storeSubTree(PPCNode node, BufferedWriter output, StringBuilder sb) throws IOException{
+    	sb.setLength(0);
+		output.write(sb.append(node.parent.pre).append(':').append(node.pre).append(':').append(node.pos).append(':').
+    			append(node.itemID).append(':').append(node.count).append('\n').toString());
+    	
+    	for(PPCNode child : node.children) storeSubTree(child, output, sb);
+    }
 	
 	/**
 	 * Traverse the tree with pre and post orders and assign two ordinal numbers for each node.

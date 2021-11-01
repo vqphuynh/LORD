@@ -79,7 +79,7 @@ public class Nodelist {
  	}
  	
  	/**
- 	 * Based on the information of parameter 'node', a new node is add to the end of the node list
+ 	 * Based on the information of parameter 'node', a new node is added to the end of the node list
  	 * @param node
  	 */
  	public void add(Node node){
@@ -158,5 +158,22 @@ public class Nodelist {
 		System.arraycopy(this.ppc[1], 0, new_space[1], 0, size);
 		System.arraycopy(this.ppc[2], 0, new_space[2], 0, size);
 		this.ppc = new_space;
+ 	}
+ 	
+ 	/**
+ 	 * Return the string representation of the Nlist, just for testing
+ 	 */
+ 	public String toString(){
+ 		StringBuilder sb = new StringBuilder(200);
+ 		sb.append('{');
+ 		for(int i=0; i<size; i++){
+ 			sb.append('<').append(this.ppc[0][i]).append(',')
+ 			.append(this.ppc[1][i]).append(">:")
+ 			.append(this.ppc[2][i]).append("; ");
+ 		}
+ 		if (size > 0) sb.setLength(sb.length()-2);	// not an empty list
+ 		sb.append("} sc:").append(supportCount());
+ 		
+ 		return sb.toString();
  	}
 }

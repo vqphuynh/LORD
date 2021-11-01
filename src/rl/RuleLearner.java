@@ -168,7 +168,7 @@ public abstract class RuleLearner {
     		return 0;
     	}
     	
-    	dr.preprocess(this.train_filename, this.target_attr_count, 0.001, false);
+    	dr.fetch_info(this.train_filename, this.target_attr_count, 0.001, false);
 		
 		// If disjunctive_support = true, each atom selector contains a list of selectors sharing the common distinct value.
 		// e.g. attribute A with values a1, a2, a3. atom selector A=a1 will contain a list of selectors: A=a1, A=a1|A=a2, A=a1|A=a3.

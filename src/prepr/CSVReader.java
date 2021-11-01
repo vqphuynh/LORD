@@ -33,7 +33,7 @@ public class CSVReader extends DataReader {
     	input.readLine();
 	}
 	
-	public void preprocess(String data_filename,
+	public void fetch_info(String data_filename,
 							int target_attr_count,
 							double support_threshold,
 							boolean internal_dnf) throws DataFormatException, IOException{

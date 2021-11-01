@@ -117,7 +117,7 @@ public abstract class DataReader {
 	 * @param internal_dnf whether internal Disjunction Normal Form is supported
 	 * @throws DataFormatException, IOException
 	 */
-	public abstract void preprocess(String datasource_filename,
+	public abstract void fetch_info(String datasource_filename,
 									int target_attr_count,
 									double support_threshold,
 									boolean internal_dnf) throws DataFormatException, IOException;
@@ -407,5 +407,30 @@ public abstract class DataReader {
 			input.close();
 			return null;
 		}
+	}
+	
+	/**
+	 * Convert input record of values to the corresponding record of selectorIDs
+	 * </br> This function is used when 'fetch_info' function has been called to get information from a data set(train set),
+	 * and disjunction selectors are NOT supported.
+	 * @param record record of values read from data set
+	 * @return record of ids which is selectorID of atom selectors, the length of returned record can be smaller than that of the input record.
+	 */
+	public int[] convert_values_to_selectorIDs(String[] value_record, int[] id_buffer){
+		int count=0;
+		Selector s;
+		
+		for(int i=0; i<value_record.length; i++){
+			s = this.attributes.get(i).getSelector(value_record[i]);
+			if(s != null && s.selectorID != Selector.INVALID_ID){
+				id_buffer[count] = s.selectorID;
+				count++;
+			}
+		}
+		
+		int[] id_record = new int[count];
+		System.arraycopy(id_buffer, 0, id_record, 0, count);
+		
+		return id_record;
 	}
 }
