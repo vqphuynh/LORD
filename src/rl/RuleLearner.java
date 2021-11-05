@@ -296,20 +296,20 @@ public abstract class RuleLearner {
 	}
     
     ///////////////////////////////////////////// LEARNING PHASE //////////////////////////////////////////////
-    /**
-     * Return the running time
+	/**
+     * Learning a rule set from the training data set fetched in. 
      * @param metric
      * @param arg
-     * @return
+     * @return the running time
      */
     public abstract long learning(METRIC_TYPES metric_type, double arg);
     
     ///////////////////////////////////////////// PREDICTION PHASE //////////////////////////////////////////////
     /**
-     * Return the array of selector IDs of 'value_record'
-     * @param value_record
+     * Predict class id of a new example 'value_record'
+     * @param value_record a new example, assume that its class is at the last position
      * @param predicted_classID the predicted class ID
-     * @return
+     * @return the array of selector IDs of 'value_record', and the predicted class id in 'predicted_classID'
      */
     public abstract int[] predict(String[] value_record, IntHolder predicted_classID);
 }

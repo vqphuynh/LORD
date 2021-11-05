@@ -95,6 +95,7 @@ public class MultiThreadLord extends RuleLearner {
 		example = this.convert_values_to_selectorIDs(value_record, id_buffer);
 		
 		if(example.length < 2) {
+			// the new example is without body, just its class
 			predicted_classID.value = this.classifier.defaultClassID;
 			
 			// To print prediction details

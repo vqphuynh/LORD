@@ -152,7 +152,7 @@ public class LordRun_RuleListTruncation {
 		// Print rule set
 		System.out.println("------------------------------------------------------------------------------------");
 		System.out.println("Rule count: " + alg.classifier.ruleList.size());
-		System.out.println("Rule list: ");
+		System.out.println("Rule set: ");
 		for(RuleInfo rule :  alg.classifier.ruleList){
 			System.out.println(rule.content());
 		}

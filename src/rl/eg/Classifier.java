@@ -31,19 +31,19 @@ public class Classifier {
 			return (selected_rule = null);
 		}
 		
-		return (selected_rule = this.select_best_rule());
+		return (selected_rule = RuleComparator.select_best_rule(this.covering_rules));
 	}
 	
-	private RuleInfo select_best_rule(){
-    	RuleInfo chosen_rule = covering_rules.get(0);
-    	for(RuleInfo rule : covering_rules){
-    		if(chosen_rule.heuristic_value < rule.heuristic_value || 
-    				(chosen_rule.heuristic_value == rule.heuristic_value && chosen_rule.p < rule.p)){
-    			chosen_rule = rule;
-    		}
-    	}
-    	return (selected_rule = chosen_rule);
-    }
+//	private RuleInfo select_best_rule(){
+//    	RuleInfo chosen_rule = covering_rules.get(0);
+//    	for(RuleInfo rule : covering_rules){
+//    		if(chosen_rule.heuristic_value < rule.heuristic_value || 
+//    				(chosen_rule.heuristic_value == rule.heuristic_value && chosen_rule.p < rule.p)){
+//    			chosen_rule = rule;
+//    		}
+//    	}
+//    	return (selected_rule = chosen_rule);
+//    }
 	
 	/**
 	 * Sort rules in the rule list decreasingly based on heuristic values and then true positive values.

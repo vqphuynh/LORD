@@ -55,8 +55,8 @@ public class LordRun {
         RLArgHelper arg_helper = new RLArgHelper();
         Arguments arguments = new Arguments();
         //arguments.input_directory = "data/inputs/german_arff";	// uncomment this line for debugging run
-        arguments.metric_type = METRIC_TYPES.MESTIMATE;
-        arguments.metric_arg = 0.1;
+        arguments.metric_type = METRIC_TYPES.MESTIMATE;		// default
+        arguments.metric_arg = 0.1;							// default
         
         arguments.parse(args, arg_helper);
         
@@ -194,7 +194,7 @@ public class LordRun {
 		// Print rule set
 		double rule_count, avg_rule_length = 0;
 		System.out.println("------------------------------------------------------------------------------------");
-		System.out.println("Rule list: ");
+		System.out.println("Rule set: ");
 		
 		rule_count = alg.classifier.ruleList.size();
 		for(RuleInfo rule :  alg.classifier.ruleList){
@@ -213,21 +213,16 @@ public class LordRun {
 		double hit_count = 0, miss_count = 0;
 		
 		long start = System.currentTimeMillis();
-		try {
-			dr.bind_datasource(test_filename);
+		dr.bind_datasource(test_filename);
+		while((value_record = dr.next_record()) != null){
+			example_selectorIDs = alg.predict(value_record, predicted_classID);
 			
-			while((value_record = dr.next_record()) != null){
-				example_selectorIDs = alg.predict(value_record, predicted_classID);
-				
-				if(predicted_classID.value == example_selectorIDs[example_selectorIDs.length-1])
-					hit_count++;
-				else{
-					miss_count++;
-					//print_details(example_selectorIDs, alg.classifier.covering_rules, alg.classifier.selected_rule, predicted_classID.value);
-				}
+			if(predicted_classID.value == example_selectorIDs[example_selectorIDs.length-1])
+				hit_count++;
+			else{
+				miss_count++;
+				//print_details(example_selectorIDs, alg.classifier.covering_rules, alg.classifier.selected_rule, predicted_classID.value);
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
 		long prediction_time = System.currentTimeMillis() - start;
 		

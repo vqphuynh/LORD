@@ -25,10 +25,10 @@ public class RLArgHelper implements ArgHelperIF {
 		System.out.println(String.format("\t%s (%s): metric type, default value is %s",
 				Arguments.__MT, Arguments._MT, METRIC_TYPES.MESTIMATE.name()));
 		
-		System.out.println(String.format("\t%s (%s): metric argument, default value is %f",
-				Arguments.__MA, Arguments._MA, 0.0));
+		System.out.println(String.format("\t%s (%s): metric argument",
+				Arguments.__MA, Arguments._MA));
 	    
-	    System.out.println(String.format("Example: %s input_directory %s MEstimate %s 0.0",
+	    System.out.println(String.format("Example: %s <input_directory> %s mestimate %s 0.0",
 	    		Arguments._ID, Arguments._MT, Arguments._MA));
 	    System.out.println();
 	}
