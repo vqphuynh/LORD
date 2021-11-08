@@ -57,13 +57,17 @@ arg: contain a parameters parser for LORD algorithm
 
 		--thread_count (-tc): number of threads to run, default value is the number of physical cores
 
-        	--input_directory (-id): input directory of test and training files for cross-validation
+        	--input_directory (-id): input directory of test and training files for cross-validation, 
+
+		contain 'train' for a train set, 'test' for a test set, and pairing based on an index number,
+
+		e.g. pairs of train-test sets: (train_01.arff, test_01.arff), (train_02.arff, test_02.arff)
 
         	--output_directory (-od): output directory for results, auto-generated if not specified
 
-        	--metric_type (-mt): metric type, default value is MESTIMATE
+        	--metric_type (-mt): metric type, support PRECISION, LAPLACE, ENTROPY, MESTIMATE, LINEAR_COST, RELATIVE_COST, COSINE
 
-        	--metric_argument (-ma): metric argument
+        	--metric_argument (-ma): metric argument (if possible) for the metric type
 
 		e.g. java -cp ./lord.jar run.LordRun -id .\data\inputs\german_arff -mt mestimate -ma 0
 

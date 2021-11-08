@@ -5,7 +5,6 @@
 
 package rl;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,17 +28,18 @@ public abstract class RuleLearner {
     
     protected String train_filename = null;	// file name of the training dataset
 	
-    protected int row_count;			// the number of records in the dataset
-    protected int min_sup_count;		// minimum support count
+    protected int row_count;				// the number of records in the dataset
+    protected int min_sup_count;			// minimum support count
     
-    protected int attr_count;			// the number of all attributes
-    protected int predict_attr_count;	// the number of predict attributes, the first attributes in the attributes list of the dataset
-    protected int target_attr_count;	// the number of target attributes, the last attributes in the attributes list of the dataset
-	protected int numeric_attr_count;	// the number of numeric attributes
-	protected int distinct_value_count;	// the number of distinct values of attributes
+    protected int attr_count;				// the number of all attributes
+    protected int predict_attr_count;		// the number of predict attributes, the first attributes in the attributes list of the dataset
+    protected int target_attr_count = 1;	// the number of target attributes, the last attributes in the attributes list of the dataset
+
+	protected int numeric_attr_count;		// the number of numeric attributes
+	protected int distinct_value_count;		// the number of distinct values of attributes
 	
 	protected int selector_count;			// predict_selector_count + target_selector_count
-	protected int predict_selector_count; // the number of frequent selectors from predict attributes
+	protected int predict_selector_count; 	// the number of frequent selectors from predict attributes
 	protected int target_selector_count;	// the number of selectors from target attributes
 	
 	
@@ -95,6 +95,14 @@ public abstract class RuleLearner {
     	return this.thread_count;
     }
     
+    /**
+    @param thread_num number of threads to run, 
+    * overwrite but not exceed the default number of threads = number of physical cores
+    */
+    public void setThreadCount(int thread_num){
+    	if(thread_num > 0) this.thread_count = Math.min(this.thread_count, thread_num);
+    }
+    
     public int getAttrCount(){
     	return this.attr_count;
     }
@@ -109,24 +117,9 @@ public abstract class RuleLearner {
 	
     ///////////////////////////////////////////////MINING PHASE//////////////////////////////////////////////
     /**
-     * @param target_attr_count just 1 for now (multi-class)
-     * @throws FileNotFoundException
+     * RuleLearner constructor
      */
-    public RuleLearner(int target_attr_count) throws FileNotFoundException {
-        this.target_attr_count = target_attr_count;
-    }
-    
-    /**
-     * @param thread_count number of threads to run, 
-     * overwrite but not exceed the default number of threads = number of physical cores
-     * @param train_filename
-     * @param target_attr_count just 1 for now (multi-class)
-     * @throws FileNotFoundException
-     */
-    public RuleLearner(int thread_count, int target_attr_count) throws FileNotFoundException {
-    	if(thread_count > 0) this.thread_count = Math.min(this.thread_count, thread_count);
-        this.target_attr_count = target_attr_count;
-    }
+    public RuleLearner(){}
     
     /**
      * Do data preprocessing, build tree and then create N-list for each distinct selector
@@ -235,31 +228,27 @@ public abstract class RuleLearner {
 		int index = 0;
 	    
 		DataReader dr = DataReader.getDataReader(this.train_filename);
-		try {
-			dr.bind_datasource(this.train_filename);
+		dr.bind_datasource(this.train_filename);
+		
+		String[] value_record;
+		
+		int[] id_buffer = new int[this.attr_count];
+		int[] id_record;
+		
+		while((value_record = dr.next_record()) != null){
+			// convert value_record to a record of selectorIDs
+			result[index] = id_record = this.convert_values_to_selectorIDs(value_record, id_buffer);
+			index++;
 			
-			String[] value_record;
+			// selectors with higher frequencies have greater selector ID
+			// only support ascending sort, so the order of ids to insert to the tree is from right to left
+			// since id of a target selector is always greater than id of predicting selector
+			// sorting id_record will NOT blend the IDs of two kinds of selectors together	
+			Arrays.sort(id_record);
 			
-			int[] id_buffer = new int[this.attr_count];
-			int[] id_record;
+			// System.out.println(Arrays.toString(id_record));	// for testing
 			
-			while((value_record = dr.next_record()) != null){
-				// convert value_record to a record of selectorIDs
-				result[index] = id_record = this.convert_values_to_selectorIDs(value_record, id_buffer);
-				index++;
-				
-				// selectors with higher frequencies have greater selector ID
-				// only support ascending sort, so the order of ids to insert to the tree is from right to left
-				// since id of a target selector is always greater than id of predicting selector
-				// sorting id_record will NOT blend the IDs of two kinds of selectors together	
-				Arrays.sort(id_record);
-				
-				// System.out.println(Arrays.toString(id_record));	// for testing
-				
-				ppcTree.insert_record(id_record);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
+			ppcTree.insert_record(id_record);
 		}
 		
 		this.selectorID_records = result;
@@ -296,7 +285,7 @@ public abstract class RuleLearner {
 	}
     
     ///////////////////////////////////////////// LEARNING PHASE //////////////////////////////////////////////
-	/**
+    /**
      * Learning a rule set from the training data set fetched in. 
      * @param metric
      * @param arg

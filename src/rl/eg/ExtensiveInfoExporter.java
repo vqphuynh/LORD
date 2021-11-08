@@ -17,13 +17,13 @@ import rl.RuleInfo;
 import rl.Supporter;
 
 public class ExtensiveInfoExporter {
-	private MultiThreadLord alg;
-	private Classifier c;
+	private Lord alg;
+	private RuleCollector c;
 	private int[][] selectorID_records;
 	
-	public ExtensiveInfoExporter(MultiThreadLord alg){
+	public ExtensiveInfoExporter(Lord alg){
 		this.alg = alg;
-		this.c = alg.classifier;
+		this.c = alg.rc;
 		this.selectorID_records = alg.getSelectorIDRecords();
 	}
 	
@@ -74,7 +74,7 @@ public class ExtensiveInfoExporter {
 		
 		while((value_record = reader.next_record()) != null){
 			this.alg.predict(value_record, predicted_classID);
-			covering_rule_counts.add((double) this.alg.classifier.covering_rules.size());
+			covering_rule_counts.add((double) this.alg.rc.covering_rules.size());
 		}
 		
 		write_info(writer, "covering_rule# (test set)", Supporter.get_statistic_info(covering_rule_counts.toArray()));

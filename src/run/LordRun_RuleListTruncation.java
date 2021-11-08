@@ -26,7 +26,7 @@ import java.util.zip.DataFormatException;
 import prepr.DataReader;
 import rl.IntHolder;
 import rl.RuleInfo;
-import rl.eg.MultiThreadLord;
+import rl.eg.Lord;
 import arg.Arguments;
 import arg.RLArgHelper;
 import evaluations.HeuristicMetricFactory.METRIC_TYPES;
@@ -128,7 +128,8 @@ public class LordRun_RuleListTruncation {
 		PrintStream out = new PrintStream(new FileOutputStream(Paths.get(output_dir, "eg_output.txt").toString()));
 		System.setOut(out);
 		
-		MultiThreadLord alg = new MultiThreadLord(1);
+		Lord alg = new Lord();
+		alg.setThreadCount(arguments.thread_count);
 		
 		System.out.println(String.format("Execute algorithm %s on dataset:\n %s \n %s",
 											alg.getClass().getSimpleName(), train_filename, test_filename));
@@ -147,13 +148,13 @@ public class LordRun_RuleListTruncation {
 		
 		long learning_time = alg.learning(arguments.metric_type, arguments.metric_arg);
 		System.out.println(String.format("Learning time: %d ms", learning_time));
-		alg.classifier.sort_rules();
+		alg.rc.sort_rules();
 		
 		// Print rule set
 		System.out.println("------------------------------------------------------------------------------------");
-		System.out.println("Rule count: " + alg.classifier.ruleList.size());
+		System.out.println("Rule count: " + alg.rc.ruleList.size());
 		System.out.println("Rule set: ");
-		for(RuleInfo rule :  alg.classifier.ruleList){
+		for(RuleInfo rule :  alg.rc.ruleList){
 			System.out.println(rule.content());
 		}
 		System.out.println("------------------------------------------------------------------------------------");
@@ -172,18 +173,18 @@ public class LordRun_RuleListTruncation {
 		}
 	}
 	
-	private static void testing_with_rules_truncations(MultiThreadLord alg,
+	private static void testing_with_rules_truncations(Lord alg,
 														String test_filename,
 														double truncate_portion) throws DataFormatException, IOException{
 		if(truncate_portion != 0){
-			alg.classifier.truncate(truncate_portion);
+			alg.rc.truncate(truncate_portion);
 		}
 		
 		//get rule count and average rule length
 		double rule_count, avg_rule_length = 0;
-		if(alg.classifier.truncatedRuleList == null) alg.classifier.truncatedRuleList = alg.classifier.ruleList;
-		rule_count = alg.classifier.truncatedRuleList.size();
-		for(RuleInfo rule :  alg.classifier.truncatedRuleList){
+		if(alg.rc.truncatedRuleList == null) alg.rc.truncatedRuleList = alg.rc.ruleList;
+		rule_count = alg.rc.truncatedRuleList.size();
+		for(RuleInfo rule :  alg.rc.truncatedRuleList){
 			avg_rule_length += rule.body.length;
 		}
 		avg_rule_length = avg_rule_length/rule_count;

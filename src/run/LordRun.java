@@ -27,7 +27,7 @@ import prepr.DataReader;
 import rl.IntHolder;
 import rl.RuleInfo;
 import rl.eg.ExtensiveInfoExporter;
-import rl.eg.MultiThreadLord;
+import rl.eg.Lord;
 import arg.Arguments;
 import arg.RLArgHelper;
 import evaluations.HeuristicMetricFactory.METRIC_TYPES;
@@ -171,7 +171,8 @@ public class LordRun {
 		PrintStream out = new PrintStream(new FileOutputStream(Paths.get(output_dir, "eg_output.txt").toString()));
 		System.setOut(out);
 		
-		MultiThreadLord alg = new MultiThreadLord(1);
+		Lord alg = new Lord();
+		alg.setThreadCount(arguments.thread_count);
 		
 		System.out.println(String.format("Execute algorithm %s on dataset:\n %s \n %s",
 											alg.getClass().getSimpleName(), train_filename, test_filename));
@@ -196,8 +197,8 @@ public class LordRun {
 		System.out.println("------------------------------------------------------------------------------------");
 		System.out.println("Rule set: ");
 		
-		rule_count = alg.classifier.ruleList.size();
-		for(RuleInfo rule :  alg.classifier.ruleList){
+		rule_count = alg.rc.ruleList.size();
+		for(RuleInfo rule :  alg.rc.ruleList){
 			System.out.println(rule.content());
 			avg_rule_length += rule.body.length;
 		}

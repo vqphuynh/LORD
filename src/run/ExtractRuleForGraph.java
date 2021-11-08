@@ -20,7 +20,7 @@ import java.util.zip.DataFormatException;
 
 import prepr.Selector;
 import rl.RuleInfo;
-import rl.eg.MultiThreadLord;
+import rl.eg.Lord;
 import arg.Arguments;
 import evaluations.HeuristicMetricFactory.METRIC_TYPES;
 
@@ -59,7 +59,8 @@ public class ExtractRuleForGraph {
 		File output_dir = data_file.getParentFile();
 		String file_name = data_file.getName().split("\\.")[0];
 		
-		MultiThreadLord alg = new MultiThreadLord(1);
+		Lord alg = new Lord();
+		alg.setThreadCount(arguments.thread_count);
 		
 		System.out.println(String.format("Execute algorithm %s on dataset:\n %s",
 											alg.getClass().getSimpleName(), data_filename));
@@ -91,8 +92,8 @@ public class ExtractRuleForGraph {
 			rule_groups.put(s.selectorID, new ArrayList<RuleInfo>());
 		}
 		
-		rule_count = alg.classifier.ruleList.size();
-		for(RuleInfo rule :  alg.classifier.ruleList){
+		rule_count = alg.rc.ruleList.size();
+		for(RuleInfo rule :  alg.rc.ruleList){
 			rule_groups.get(rule.headID).add(rule);
 			avg_rule_length += rule.body.length;
 		}

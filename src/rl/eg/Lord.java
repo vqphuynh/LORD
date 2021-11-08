@@ -3,82 +3,70 @@
  *
  */
 
-package rl.eg;	// eager greedy
+package rl.eg;
 
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import rl.IntHolder;
 import rl.RuleInfo;
 import rl.RuleLearner;
-import rl.RuleSearcher;
-import evaluations.HeuristicMetric;
-import evaluations.HeuristicMetricFactory;
 import evaluations.HeuristicMetricFactory.METRIC_TYPES;
 
 /**
- * Implementation of LORD algorithm
- * </br>The approach of searching for a locally optimal rule for each training example.
+ * Implementation of multi-thread LORD algorithm
+ * </br>Parallel version for the approach of searching for a locally optimal rule for each training example
  */
 public class Lord extends RuleLearner {
-	public Classifier classifier;
+	public RuleCollector rc;
 	
-    ///////////////////////////////////////////////MINING PHASE//////////////////////////////////////////////
-    /**
-     * @param target_attr_count
-     * @throws FileNotFoundException
-     */
-    public Lord(int target_attr_count) throws FileNotFoundException {
-        super(target_attr_count);
-    }
-    
-    /**
-     * @param thread_count number of threads to run
-     * @param target_attr_count
-     * @throws FileNotFoundException
-     */
-    public Lord(int thread_count, int target_attr_count) throws FileNotFoundException {
-    	super(thread_count, target_attr_count);
+    public Lord() {
+        super();
     }
     
     ///////////////////////////////////////////// LEARNING PHASE //////////////////////////////////////////////    
     public long learning(METRIC_TYPES metric_type, double arg){
     	long start = System.currentTimeMillis();
     	
-    	HeuristicMetric metric = HeuristicMetricFactory.getInterestMetric(metric_type);
-    	double[] arguments = new double[7];
-    	arguments[3] = this.row_count;
-    	arguments[6] = arg;
-		
-		int example_classID;
-		RuleInfo greedy_best_rule;
-		Map<String, RuleInfo> rule_set = new HashMap<String, RuleInfo>();
-		
-		for(int[] example : this.selectorID_records){
-			if(example.length < 2) continue;
+    	// Threads
+        IntHolder globalIndex = new IntHolder(0);
+        Thread[] threads = new Thread[this.thread_count];
+    	
+		List<Map<String, RuleInfo>> ruleSet_list = new ArrayList<Map<String, RuleInfo>>(this.thread_count);
+		for(int i=0; i<this.thread_count; i++){
+			Map<String, RuleInfo> rule_set = new HashMap<String, RuleInfo>();
+			ruleSet_list.add(rule_set);
 			
-			example_classID = example[example.length-1];
-			int[] body_selector_IDs = new int[example.length-1];
-			System.arraycopy(example, 0, body_selector_IDs, 0, body_selector_IDs.length);
+			threads[i] = new SearchRuleThread(this.selectorID_records,
+											this.constructing_selectors,
+											this.selector_nodelist_map,
+											rule_set,
+											metric_type,
+											arg,
+											globalIndex, i);
 			
-			arguments[4] = this.constructing_selectors.get(example_classID).frequency;
-			arguments[5] = arguments[3] - arguments[4];
-			
-			greedy_best_rule = RuleSearcher.search_for_greedy_best_rule_verbose(this.selector_nodelist_map,
-																		body_selector_IDs,
-																		example_classID,
-																		metric,
-																		arguments);
-			
-			rule_set.put(greedy_best_rule.signature(), greedy_best_rule);
+			threads[i].start();
 		}
 		
+		try {
+			for(int i=0; i<this.thread_count; i++) threads[i].join();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		// How many before-filtered rules are there?
+		Map<String, RuleInfo> before_filter_rules = new HashMap<String, RuleInfo>();
+		for(Map<String, RuleInfo> set : ruleSet_list){
+			before_filter_rules.putAll(set);
+		}
+		System.out.println("Total before-filter rules: " + before_filter_rules.size());
+		
 		// Build the output classifier
-		// this.classifier = new Classifier(this.get_default_class(), rule_set);
-		this.classifier = new Classifier(this.get_default_class(), rule_set, this.selectorID_records);	
+		//this.classifier = new Classifier(this.default_classID, ruleSet_list, this.selectorID_records[0].length);
+		this.rc = new RuleCollector(this.default_classID, ruleSet_list, this.selectorID_records, this.thread_count);
     	
     	return System.currentTimeMillis()-start;
     }
@@ -92,23 +80,24 @@ public class Lord extends RuleLearner {
 		example = this.convert_values_to_selectorIDs(value_record, id_buffer);
 		
 		if(example.length < 2) {
-			predicted_classID.value = this.classifier.defaultClassID;
+			// the new example is without body, just its class
+			predicted_classID.value = this.rc.defaultClassID;
 			
-			// For printing prediction details
-			this.classifier.selected_rule = null;
-			this.classifier.covering_rules = new ArrayList<RuleInfo>();
+			// To print prediction details
+			this.rc.selected_rule = null;
+			this.rc.covering_rules = new ArrayList<RuleInfo>();
 			
 			return example;
 		}
 		
 		Arrays.sort(example);
-		RuleInfo best_rule = this.classifier.get_best_covering_rule(example);
+		RuleInfo best_rule = this.rc.get_best_covering_rule(example);
 		if(best_rule != null){
 			predicted_classID.value = best_rule.headID;
 			return example;
 		}
 		
-		predicted_classID.value = this.classifier.defaultClassID;
+		predicted_classID.value = this.rc.defaultClassID;
 		
 		return example;
     }
