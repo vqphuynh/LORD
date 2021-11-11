@@ -83,9 +83,9 @@ arg: contain a parameters parser for LORD algorithm
 
 		e.g. java -cp ./lord.jar run.TrainTestSplitter ./data/inputs/datasets/german.arff 10 1 arff
 
-	java -cp ./lord.jar run.DiscretizationRun <data directory> <one_outputfile>
+	java -cp ./lord.jar run.DiscretizationRun <data_directory> <one_outputfile>
 
-		<data directory> directory containing pairs of train-test data sets
+		<data_directory> directory containing pairs of train-test data sets
 
 		<one_outputfile> 'true' or 'false', if the value is 'true', the discretized test set will be written after the discretized train set in a single file.
 		If  the value is 'false', the discretized train and test sets will be written into seperate files.
