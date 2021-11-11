@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class Attribute{
-	public static final Set<String> NULL_SYMBOLS = new HashSet<String>(Arrays.asList("", "?", " "));
+	public static final Set<String> NULL_SYMBOLS = new HashSet<String>(Arrays.asList("", "?", " ", "NaN"));
 	public static enum DATA_TYPE {NOMINAL,NUMERIC};
 	
 	/**
@@ -50,7 +50,7 @@ public class Attribute{
 	/**
 	 * Return the corresponding selector of the value
 	 * </br>A null can be returned in cases:
-	 * </br> 1. Null presentation ('', '?', ' ')
+	 * </br> 1. Null presentation ('', '?', ' ', 'NaN')
 	 * </br> 2. Or a nominal value found in testing data set, but not in training data set
 	 * @param value
 	 * @return
@@ -58,7 +58,7 @@ public class Attribute{
 	public Selector getSelector(String value){
 		switch(this.type){
 			case NOMINAL:
-				// If a null value ('', ' ', '?') or a value not in training set, a null returned
+				// If a null value ('', ' ', '?', 'NaN') or a value not in training set, a null returned
 				return this.distinct_values.get(value);
 			case NUMERIC:
 				if(Attribute.NULL_SYMBOLS.contains(value)) return null;

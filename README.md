@@ -19,9 +19,9 @@ run: contain executable java files, some main files such as
 
 rl.eg: contain implementations of LORD algorithm
 
-	1. Lord.java: a serial version of LORD
+	1. Lord.java: a multi-thread version of LORD
 
-	2. MultiThreadLord.java: a multi-thread version of LORD
+	2. 
 
 
 rl: contain implementations of PPC-tree, Nlist, R-tree structures, rule search strategies (greedy and brute-force), ...
