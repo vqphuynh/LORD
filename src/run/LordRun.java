@@ -29,7 +29,7 @@ import rl.RuleInfo;
 import rl.eg.ExtensiveInfoExporter;
 import rl.eg.Lord;
 import arg.Arguments;
-import arg.RLArgHelper;
+import arg.LordArgHelper;
 import evaluations.HeuristicMetricFactory.METRIC_TYPES;
 
 /**
@@ -52,7 +52,7 @@ public class LordRun {
         DateFormat dateFormat = new SimpleDateFormat("_yyyy-MM-dd_hh-mm-ss");
         String strDate = dateFormat.format(date);
         
-        RLArgHelper arg_helper = new RLArgHelper();
+        LordArgHelper arg_helper = new LordArgHelper();
         Arguments arguments = new Arguments();
         //arguments.input_directory = "data/inputs/german_arff";	// uncomment this line for debugging run
         arguments.metric_type = METRIC_TYPES.MESTIMATE;		// default
@@ -197,8 +197,8 @@ public class LordRun {
 		System.out.println("------------------------------------------------------------------------------------");
 		System.out.println("Rule set: ");
 		
-		rule_count = alg.rc.ruleList.size();
-		for(RuleInfo rule :  alg.rc.ruleList){
+		rule_count = alg.rm.ruleList.size();
+		for(RuleInfo rule :  alg.rm.ruleList){
 			System.out.println(rule.content());
 			avg_rule_length += rule.body.length;
 		}

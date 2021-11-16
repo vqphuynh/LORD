@@ -19,6 +19,7 @@ public class Arguments {
 	public double heuristic_threshold = Double.NaN;
 	public METRIC_TYPES metric_type = null;
 	public double metric_arg = Double.NaN;
+	public boolean discretize_attr = true;
 	
 	public static final String __TC = "--thread_count";
 	public static final String _TC = "-tc";
@@ -40,6 +41,8 @@ public class Arguments {
 	public static final String _MT = "-mt";
 	public static final String __MA = "--metric_argument";
 	public static final String _MA = "-ma";
+	public static final String __DA = "--discretize_attribute";
+	public static final String _DA = "-da";
 	public static final String __H = "--help";
 	public static final String _H = "-h";
 	
@@ -94,6 +97,8 @@ public class Arguments {
 				}catch(NumberFormatException e){
 					System.out.println("Invalid metric argument.");
 				}
+			} else if (args[i].equals(_DA) || args[i].equals(__DA)) {
+				discretize_attr = Boolean.parseBoolean(args[i + 1]);
 			} else if (args[i].equals(_H) || args[i].equals(__H)) {
 				helper.print_help();
 			} 

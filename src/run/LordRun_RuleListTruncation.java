@@ -28,7 +28,7 @@ import rl.IntHolder;
 import rl.RuleInfo;
 import rl.eg.Lord;
 import arg.Arguments;
-import arg.RLArgHelper;
+import arg.LordArgHelper;
 import evaluations.HeuristicMetricFactory.METRIC_TYPES;
 
 /**
@@ -51,7 +51,7 @@ public class LordRun_RuleListTruncation {
         DateFormat dateFormat = new SimpleDateFormat("_yyyy-MM-dd_hh-mm-ss");
         String strDate = dateFormat.format(date);
         
-        RLArgHelper arg_helper = new RLArgHelper();
+        LordArgHelper arg_helper = new LordArgHelper();
         Arguments arguments = new Arguments();
         //arguments.input_directory = "data/inputs/adult_arff";	// uncomment this line for debugging run
         arguments.metric_type = METRIC_TYPES.MESTIMATE;
@@ -148,13 +148,13 @@ public class LordRun_RuleListTruncation {
 		
 		long learning_time = alg.learning(arguments.metric_type, arguments.metric_arg);
 		System.out.println(String.format("Learning time: %d ms", learning_time));
-		alg.rc.sort_rules();
+		alg.rm.sort_rules();
 		
 		// Print rule set
 		System.out.println("------------------------------------------------------------------------------------");
-		System.out.println("Rule count: " + alg.rc.ruleList.size());
+		System.out.println("Rule count: " + alg.rm.ruleList.size());
 		System.out.println("Rule set: ");
-		for(RuleInfo rule :  alg.rc.ruleList){
+		for(RuleInfo rule :  alg.rm.ruleList){
 			System.out.println(rule.content());
 		}
 		System.out.println("------------------------------------------------------------------------------------");
@@ -177,14 +177,14 @@ public class LordRun_RuleListTruncation {
 														String test_filename,
 														double truncate_portion) throws DataFormatException, IOException{
 		if(truncate_portion != 0){
-			alg.rc.truncate(truncate_portion);
+			alg.rm.truncate(truncate_portion);
 		}
 		
 		//get rule count and average rule length
 		double rule_count, avg_rule_length = 0;
-		if(alg.rc.truncatedRuleList == null) alg.rc.truncatedRuleList = alg.rc.ruleList;
-		rule_count = alg.rc.truncatedRuleList.size();
-		for(RuleInfo rule :  alg.rc.truncatedRuleList){
+		if(alg.rm.truncatedRuleList == null) alg.rm.truncatedRuleList = alg.rm.ruleList;
+		rule_count = alg.rm.truncatedRuleList.size();
+		for(RuleInfo rule :  alg.rm.truncatedRuleList){
 			avg_rule_length += rule.body.length;
 		}
 		avg_rule_length = avg_rule_length/rule_count;

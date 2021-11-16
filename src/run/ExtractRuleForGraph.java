@@ -92,8 +92,8 @@ public class ExtractRuleForGraph {
 			rule_groups.put(s.selectorID, new ArrayList<RuleInfo>());
 		}
 		
-		rule_count = alg.rc.ruleList.size();
-		for(RuleInfo rule :  alg.rc.ruleList){
+		rule_count = alg.rm.ruleList.size();
+		for(RuleInfo rule :  alg.rm.ruleList){
 			rule_groups.get(rule.headID).add(rule);
 			avg_rule_length += rule.body.length;
 		}

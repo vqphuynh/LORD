@@ -68,7 +68,7 @@ public class Attribute{
 					// string presentation of double values
 					// e.g.  '120' changed to '120.0'
 					// Therefore, cannot use directly 'value' as a string to get the corresponding Selector
-					return this.distinct_values.get(Double.parseDouble(value));
+					return this.distinct_values.get(Double.parseDouble(value)+"");
 				}else{
 					return this.distinct_values.get(str_intervals[this.find_right_index(
 							this.discretized_values, Double.parseDouble(value))]);

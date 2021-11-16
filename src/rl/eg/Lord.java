@@ -16,14 +16,15 @@ import rl.RuleInfo;
 import rl.RuleLearner;
 import evaluations.HeuristicMetricFactory.METRIC_TYPES;
 
+
 /**
  * Implementation of multi-thread LORD algorithm
  * </br>Parallel version for the approach of searching for a locally optimal rule for each training example
  */
-public class Lord extends RuleLearner {
-	public RuleCollector rc;
+public class Lord extends RuleLearner{
+	public RuleManager rm;
 	
-    public Lord() {
+    public Lord(){
         super();
     }
     
@@ -66,7 +67,7 @@ public class Lord extends RuleLearner {
 		
 		// Build the output classifier
 		//this.classifier = new Classifier(this.default_classID, ruleSet_list, this.selectorID_records[0].length);
-		this.rc = new RuleCollector(this.default_classID, ruleSet_list, this.selectorID_records, this.thread_count);
+		this.rm = new RuleManager(this.default_classID, ruleSet_list, this.selectorID_records, this.thread_count);
     	
     	return System.currentTimeMillis()-start;
     }
@@ -81,23 +82,23 @@ public class Lord extends RuleLearner {
 		
 		if(example.length < 2) {
 			// the new example is without body, just its class
-			predicted_classID.value = this.rc.defaultClassID;
+			predicted_classID.value = this.rm.defaultClassID;
 			
 			// To print prediction details
-			this.rc.selected_rule = null;
-			this.rc.covering_rules = new ArrayList<RuleInfo>();
+			this.rm.selected_rule = null;
+			this.rm.covering_rules = new ArrayList<RuleInfo>();
 			
 			return example;
 		}
 		
 		Arrays.sort(example);
-		RuleInfo best_rule = this.rc.get_best_covering_rule(example);
+		RuleInfo best_rule = this.rm.get_best_covering_rule(example);
 		if(best_rule != null){
 			predicted_classID.value = best_rule.headID;
 			return example;
 		}
 		
-		predicted_classID.value = this.rc.defaultClassID;
+		predicted_classID.value = this.rm.defaultClassID;
 		
 		return example;
     }

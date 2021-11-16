@@ -64,7 +64,7 @@ public class Supporter {
     	if(size1 == 0 || size2 == 0) return new NodelistEmpty();
 		
     	int index1=0, index2=0, parent_node_index = -1, parent_node_pre = -1;
-		Nodelist nodelist = new Nodelist(size2); // the maximum capacity for 'nodelist' is as large as 'size2'
+		Nodelist nodelist = new Nodelist(size1 < size2 ? size1 : size2);
 		Node i1_node = new Node(), i2_node = new Node();
 		nodelist1.get(index1, i1_node);
 		nodelist2.get(index2, i2_node);
@@ -102,6 +102,8 @@ public class Supporter {
 				else break;
     		}
     	}
+    	
+    	//nodelist.shrink();	// for memory save
     	
     	return nodelist;
     }
@@ -176,6 +178,8 @@ public class Supporter {
 				else break;
     		}
     	}
+    	
+    	//nodelist.shrink();	// for memory save
     	
     	return nodelist;
     	
@@ -297,6 +301,8 @@ public class Supporter {
     			nodelist.add(i2_node);
     		}
 		}
+    	
+    	//nodelist.shrink();	// for memory save
     	
     	return nodelist;
     	

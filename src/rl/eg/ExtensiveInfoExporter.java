@@ -18,12 +18,12 @@ import rl.Supporter;
 
 public class ExtensiveInfoExporter {
 	private Lord alg;
-	private RuleCollector c;
+	private RuleManager rm;
 	private int[][] selectorID_records;
 	
 	public ExtensiveInfoExporter(Lord alg){
 		this.alg = alg;
-		this.c = alg.rc;
+		this.rm = alg.rm;
 		this.selectorID_records = alg.getSelectorIDRecords();
 	}
 	
@@ -32,14 +32,14 @@ public class ExtensiveInfoExporter {
 		FileWriter fw = new FileWriter(filename, true);
 		BufferedWriter writer = new BufferedWriter(fw);
 		
-		int rule_count = this.c.ruleList.size();
+		int rule_count = this.rm.ruleList.size();
 		double[] lengths = new double[rule_count];
 		double[] tps = new double[rule_count];
 		double[] n_plus_ps = new double[rule_count];
 		double[] covering_rule_counts = new double[this.selectorID_records.length];
 		
 		int index = 0;
-		for(RuleInfo rule : this.c.ruleList){
+		for(RuleInfo rule : this.rm.ruleList){
 			lengths[index] = rule.body.length;
 			tps[index] = rule.p;
 			n_plus_ps[index] = rule.n_plus_p;
@@ -48,7 +48,7 @@ public class ExtensiveInfoExporter {
 		
 		index = 0;
 		for(int[] selectorID_record : this.selectorID_records){
-			covering_rule_counts[index] = this.c.ruleTree.find_covering_rules(selectorID_record).size();
+			covering_rule_counts[index] = this.rm.ruleTree.find_covering_rules(selectorID_record).size();
 			index++;
 		}
 		
@@ -74,7 +74,7 @@ public class ExtensiveInfoExporter {
 		
 		while((value_record = reader.next_record()) != null){
 			this.alg.predict(value_record, predicted_classID);
-			covering_rule_counts.add((double) this.alg.rc.covering_rules.size());
+			covering_rule_counts.add((double) this.alg.rm.covering_rules.size());
 		}
 		
 		write_info(writer, "covering_rule# (test set)", Supporter.get_statistic_info(covering_rule_counts.toArray()));
