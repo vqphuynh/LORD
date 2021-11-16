@@ -79,17 +79,17 @@ arg: contain a parameters parser for LORD algorithm
 
 	java -cp ./lord.jar run.WLordRun	: to view the parameter list of WLORD (LORD adaptation to interface with WEKA)
 
-	java -cp ./lord.jar run.WLordRun <data_filename> <number_of_folds> <seed> <metric_type> <metric_arg> <discretize_attr>	: do cross-validation benchmarks for WLORD
+	java -cp ./lord.jar run.WLordRun <data_filename> <number_of_folds> <seed_value> <metric_type> <metric_arg> <discretize_attr>	: do cross-validation benchmarks for WLORD
 
 		e.g. java -cp ./lord.jar run.WLordRun data\inputs\datasets\german.arff 10 1 mestimate 0.1
 
 	
-	java -cp ./lord.jar run.JRIP <data_filename> <number_of_folds> <seed> <optimize_run_count>	: do cross-validation benchmarks for JRIP
+	java -cp ./lord.jar run.JRIP <data_filename> <number_of_folds> <seed_value> <optimize_run_count>	: do cross-validation benchmarks for JRIP
 
 		e.g. java -cp ./lord.jar run.JRIP ./data/inputs/datasets/german.arff 10 1 2
 
 
-	java -cp ./lord.jar run.TrainTestSplitter <data_filename> <number_of_folds> <seed> <output_format>
+	java -cp ./lord.jar run.TrainTestSplitter <data_filename> <number_of_folds> <seed_value> <output_format>
 
 		<output_format> can be 'arff' or 'csv'
 
