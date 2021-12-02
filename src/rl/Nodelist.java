@@ -136,10 +136,9 @@ public class Nodelist {
  	
  	/**
  	 * This function should only be used when being sure that there will not be any new nodes added.
- 	 * </br> Shrink the capacity to the size.
  	 * @param efficient_rate: if the size < capacity*efficient_rate, the shrink will be done.
  	 */
- 	public void shrink(float efficient_rate){
+ 	public Nodelist shrink(float efficient_rate){
  		if(this.size < this.ppc[0].length*efficient_rate){
  			// Too much waste room, shrink
  			int[][] new_space = new int[3][size];
@@ -149,15 +148,23 @@ public class Nodelist {
  			System.arraycopy(this.ppc[2], 0, new_space[2], 0, size);
  			this.ppc = new_space;
  		}
+ 		
+ 		return this;
  	}
  	
- 	public void shrink(){
+ 	/**
+ 	 * This function should only be used when being sure that there will not be any new nodes added.
+ 	 * </br> Shrink the capacity to the size.
+ 	 */
+ 	public Nodelist shrink(){
 		int[][] new_space = new int[3][size];
 		// Copy
 		System.arraycopy(this.ppc[0], 0, new_space[0], 0, size);
 		System.arraycopy(this.ppc[1], 0, new_space[1], 0, size);
 		System.arraycopy(this.ppc[2], 0, new_space[2], 0, size);
 		this.ppc = new_space;
+		
+		return this;
  	}
  	
  	/**

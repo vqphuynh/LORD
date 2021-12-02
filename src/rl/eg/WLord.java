@@ -13,8 +13,8 @@ import prepr.Attribute;
 import prepr.InstanceReader;
 import prepr.Selector;
 import rl.IntHolder;
-import rl.Nodelist;
 import rl.PPCTree;
+import rl.RuleSearcher;
 import weka.classifiers.Classifier;
 import weka.core.Capabilities;
 import weka.core.Capabilities.Capability;
@@ -102,7 +102,7 @@ public class WLord extends Lord implements Classifier, CapabilitiesHandler {
 	 * @param instances
 	 * @return 
 	 */
-	private Map<String, Nodelist> create_selector_Nlist_map(Instances instances){
+	private PPCTree create_PPCtree(Instances instances){
 		PPCTree ppcTree = new PPCTree();
 		
 		int[][] result = new int[this.row_count][];
@@ -135,7 +135,7 @@ public class WLord extends Lord implements Classifier, CapabilitiesHandler {
 		// Assign a pair of pre-order and pos-order codes for each tree node.
 		ppcTree.assignPrePosOrderCode();
 		
-		return ppcTree.create_selector_Nlist_map(this.selector_count);
+		return ppcTree;
 	}
     
 	
@@ -151,7 +151,7 @@ public class WLord extends Lord implements Classifier, CapabilitiesHandler {
 	 * </br> '-da' whether doing discretization for numeric attributes, the default value is 'true'.
 	 * Some data sets contain attribute values which are index of values of nominal attributes. 
 	 * So they should be treated as nominal rather than numeric attributes, 
-	 * e.g for 'lymphography' data set, it should be set to 'false'.
+	 * e.g for 'lymphography' data set, it should 'false'.
 	 * @param options
 	 * @throws Exception
 	 */
@@ -169,8 +169,13 @@ public class WLord extends Lord implements Classifier, CapabilitiesHandler {
 			this.setOptions(new String[]{});
 		}
 		
-		this.preprocessing(instances);		
-		this.selector_nodelist_map = this.create_selector_Nlist_map(instances);
+		this.preprocessing(instances);
+		
+		PPCTree ppcTree = this.create_PPCtree(instances);
+		this.selector_nodelists = ppcTree.create_Nlist_for_selectors_arr(this.selector_count);
+        this.selector_nodelist_map = ppcTree.create_selector_Nlist_map(this.selector_nodelists);
+        RuleSearcher.setSelectorNodelists(this.selector_nodelists);
+        
 		super.learning(this.arguments.metric_type, this.arguments.metric_arg);
 	}
 
@@ -211,6 +216,7 @@ public class WLord extends Lord implements Classifier, CapabilitiesHandler {
 		// class
 		result.enableAllClasses();						// enable all class types
 		result.disable(Capability.DATE_CLASS);			// disable date class
+		result.disable(Capability.NUMERIC_CLASS);		// disable numeric class
 		result.disable(Capability.RELATIONAL_CLASS);	// disable relational class
 		
 		return result;

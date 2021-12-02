@@ -64,7 +64,7 @@ public class Supporter {
     	if(size1 == 0 || size2 == 0) return new NodelistEmpty();
 		
     	int index1=0, index2=0, parent_node_index = -1, parent_node_pre = -1;
-		Nodelist nodelist = new Nodelist(size1 < size2 ? size1 : size2);
+    	Nodelist nodelist = new Nodelist(size1);
 		Node i1_node = new Node(), i2_node = new Node();
 		nodelist1.get(index1, i1_node);
 		nodelist2.get(index2, i2_node);
@@ -179,7 +179,7 @@ public class Supporter {
     		}
     	}
     	
-    	//nodelist.shrink();	// for memory save
+    	nodelist.shrink();	// for memory save
     	
     	return nodelist;
     	
@@ -302,7 +302,7 @@ public class Supporter {
     		}
 		}
     	
-    	//nodelist.shrink();	// for memory save
+    	nodelist.shrink();	// for memory save
     	
     	return nodelist;
     	

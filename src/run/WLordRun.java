@@ -23,7 +23,7 @@ import evaluations.HeuristicMetricFactory;
  *
  */
 public class WLordRun {
-	private static String data_filename = "data/inputs/datasets/german.arff";
+	private static String data_filename = "data/inputs/datasets/tic-tac-toe.csv";
 	private static int fold_count = 10;
 	private static int seed = 1;
 	
@@ -40,12 +40,12 @@ public class WLordRun {
 			System.out.println("<metric_type> values: mestimate, entropy, relative_cost, ...");
 			System.out.println();
 			System.out.println("<discretize_attr> values: true/false, default value: true, whether numeric attributes are discretized.");
-			System.out.println("Some data sets contain indices of categorical values, e.g. lymphography data set; <discretize_attr> should be set to false.");
+			System.out.println("Some data sets contain indices of categorical values, e.g. lymphography data set; <discretize_attr> should be set to false.\n\n");
 			
 			File file = new File(data_filename);
 			String filename = file.getName().substring(0, file.getName().lastIndexOf('.'));
 			output_filename_direct = "data/outputs/wlord_" + filename + "_" + metric_type + "_" + metric_arg + ".txt";
-			//run_cross_validation_direct(data_filename, fold_count, seed, output_filename_direct); // uncomment for debugging run 
+			//run_cross_validation_direct(data_filename, fold_count, seed, output_filename_direct); // uncomment for debugging run
 			
 			return;
 		}

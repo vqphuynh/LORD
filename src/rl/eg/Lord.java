@@ -58,15 +58,16 @@ public class Lord extends RuleLearner{
 			e.printStackTrace();
 		}
 		
-		// How many before-filtered rules are there?
+		// How many before-filtered rules are there? uncomment the below code block
+		/*
 		Map<String, RuleInfo> before_filter_rules = new HashMap<String, RuleInfo>();
 		for(Map<String, RuleInfo> set : ruleSet_list){
 			before_filter_rules.putAll(set);
 		}
 		System.out.println("Total before-filter rules: " + before_filter_rules.size());
+		*/
 		
-		// Build the output classifier
-		//this.classifier = new Classifier(this.default_classID, ruleSet_list, this.selectorID_records[0].length);
+		// Build the RuleManager
 		this.rm = new RuleManager(this.default_classID, ruleSet_list, this.selectorID_records, this.thread_count);
     	
     	return System.currentTimeMillis()-start;

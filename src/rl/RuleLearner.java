@@ -65,6 +65,7 @@ public abstract class RuleLearner {
 	 */
 	//protected List<Nodelist> selector_nodelists;
 	protected Map<String, Nodelist> selector_nodelist_map;
+	protected Nodelist[] selector_nodelists;
 	protected int[][] selectorID_records;	// training examples in corresponding selector ID sorted in the predefined order O
 	
 	protected List<Integer> classIDs;	// all class IDs
@@ -138,7 +139,9 @@ public abstract class RuleLearner {
         times[1] = this.construct_tree(ppcTree);
         
         long start = System.currentTimeMillis();
-        this.selector_nodelist_map = ppcTree.create_selector_Nlist_map(this.selector_count);
+        this.selector_nodelists = ppcTree.create_Nlist_for_selectors_arr(this.selector_count);
+        this.selector_nodelist_map = ppcTree.create_selector_Nlist_map(this.selector_nodelists);
+        RuleSearcher.setSelectorNodelists(this.selector_nodelists);
         times[2] = System.currentTimeMillis() - start;
         
         return times;
@@ -163,9 +166,6 @@ public abstract class RuleLearner {
     	
     	dr.fetch_info(this.train_filename, this.target_attr_count, 0.001, false);
 		
-		// If disjunctive_support = true, each atom selector contains a list of selectors sharing the common distinct value.
-		// e.g. attribute A with values a1, a2, a3. atom selector A=a1 will contain a list of selectors: A=a1, A=a1|A=a2, A=a1|A=a3.
-		// full disjunctive selector e.g. A=a1|A=a2|A=a3 is eliminated.
 		this.attributes = dr.getAttributes();
 		
 		// List of all atom selectors

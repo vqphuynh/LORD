@@ -22,7 +22,7 @@ class NodelistEmpty extends Nodelist {
  		return 0;
  	}
  	
- 	public void shrink(){}
+ 	public Nodelist shrink(){return this;}
  	
  	public int totalSupportCount(){
  		return 0;

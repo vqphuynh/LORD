@@ -15,6 +15,11 @@ import prepr.Selector;
 import evaluations.HeuristicMetric;
 
 public class RuleSearcher {
+	private static Nodelist[] selector_nodelists = null;
+	
+	public static void setSelectorNodelists(Nodelist[] selector_nodelists){
+		RuleSearcher.selector_nodelists = selector_nodelists;
+	}
 	
 	/**
      * Remove removed_ID from array array_IDs, return new array
@@ -116,7 +121,7 @@ public class RuleSearcher {
     	Nodelist nodelist1 = calculate_nlist_impr(nlist_db, sub_selector_IDs);
     	
     	// get Nlist of the last selector ID of k_selector_IDs
-    	Nodelist nodelist2 = nlist_db.get(Arrays.toString(new int[]{k_selector_IDs[sub_selector_IDs.length]}));
+    	Nodelist nodelist2 = selector_nodelists[k_selector_IDs[sub_selector_IDs.length]];
     	
     	nodelist = Supporter.create_nlist(nodelist1, nodelist2);
     	

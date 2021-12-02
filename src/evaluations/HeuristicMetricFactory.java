@@ -8,7 +8,7 @@ public package evaluations;
 
 public class HeuristicMetricFactory {
 	
-	public enum METRIC_TYPES {PRECISION, LAPLACE, ENTROPY, MESTIMATE, LINEAR_COST, RELATIVE_COST, COSINE};
+	public enum METRIC_TYPES {PRECISION, LAPLACE, ENTROPY, MESTIMATE, MRELATIVELAPLACE, LINEAR_COST, RELATIVE_COST, COSINE};
 	
 	public static HeuristicMetric getInterestMetric(METRIC_TYPES metric_type){
 		switch(metric_type){
@@ -16,6 +16,8 @@ public class HeuristicMetricFactory {
 				return new Precision();
 			case LAPLACE:
 				return new Laplace();
+			case MRELATIVELAPLACE:
+				return new MRelativeLaplace();
 			case ENTROPY:
 				return new Entropy();
 			case MESTIMATE:
