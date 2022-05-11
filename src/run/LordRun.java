@@ -54,7 +54,7 @@ public class LordRun {
         
         LordArgHelper arg_helper = new LordArgHelper();
         Arguments arguments = new Arguments();
-        //arguments.input_directory = "data/inputs/german_arff";	// uncomment this line for debugging run
+        arguments.input_directory = "data/inputs/tic-tac-toe";	// uncomment this line for debugging run
         arguments.metric_type = METRIC_TYPES.MESTIMATE;		// default
         arguments.metric_arg = 0.1;							// default
         
@@ -196,10 +196,13 @@ public class LordRun {
 		double rule_count, avg_rule_length = 0;
 		System.out.println("------------------------------------------------------------------------------------");
 		System.out.println("Rule set: ");
-		
+
 		rule_count = alg.rm.ruleList.size();
+		String[] selectorConditions = alg.getConstructingSelectors().stream()
+				.map(s -> s.condition)
+				.toArray(String[]::new);
 		for(RuleInfo rule :  alg.rm.ruleList){
-			System.out.println(rule.content());
+			System.out.println(rule.content(selectorConditions));
 			avg_rule_length += rule.body.length;
 		}
 		avg_rule_length = avg_rule_length/rule_count;

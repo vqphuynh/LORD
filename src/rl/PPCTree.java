@@ -5,6 +5,8 @@
 
 package rl;
 
+import prepr.Selector;
+
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -275,4 +277,9 @@ public class PPCTree {
     	
     	return matrix;
     }
+
+	public void print(String[] conditions) {
+		System.out.println("PPCTree:");
+		root.print(conditions, 0);
+	}
 }

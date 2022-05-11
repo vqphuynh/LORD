@@ -6,10 +6,8 @@
 package rl;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.IntStream;
 import java.util.zip.DataFormatException;
 
 import prepr.Attribute;
@@ -27,6 +25,8 @@ public abstract class RuleLearner {
     protected int thread_count = Math.max(1, Runtime.getRuntime().availableProcessors()/2);
     
     protected String train_filename = null;	// file name of the training dataset
+
+	protected boolean cnf_mode = false;     // by default, rule learner builds DNF models
 	
     protected int row_count;				// the number of records in the dataset
     protected int min_sup_count;			// minimum support count
@@ -194,7 +194,7 @@ public abstract class RuleLearner {
     }
 	
 	protected List<Integer> get_class_ids(){
-    	List<Integer> classIDs = new ArrayList<Integer>(this.target_selector_count);
+    	List<Integer> classIDs = new ArrayList<>(this.target_selector_count);
     	
     	for(int i=this.predict_selector_count; i<this.selector_count; i++){
     		classIDs.add(this.constructing_selectors.get(i).selectorID);
@@ -233,11 +233,14 @@ public abstract class RuleLearner {
 		String[] value_record;
 		
 		int[] id_buffer = new int[this.attr_count];
+		if (cnf_mode) {
+			id_buffer = IntStream.range(0, selector_count).toArray();
+		}
 		int[] id_record;
 		
 		while((value_record = dr.next_record()) != null){
 			// convert value_record to a record of selectorIDs
-			result[index] = id_record = this.convert_values_to_selectorIDs(value_record, id_buffer);
+			result[index] = id_record = this.convert_values_to_selectorIDs(value_record, id_buffer.clone());
 			index++;
 			
 			// selectors with higher frequencies have greater selector ID
@@ -255,6 +258,10 @@ public abstract class RuleLearner {
 	    
 		// Assign a pair of pre-order and pos-order codes for each tree node.
 		ppcTree.assignPrePosOrderCode();
+		String negation = cnf_mode ? "!" : "";
+		ppcTree.print(constructing_selectors.stream()
+				.map(s -> negation + s.condition)
+				.toArray(String[]::new));
 		
 	    return System.currentTimeMillis() - start;
 	}
@@ -263,31 +270,40 @@ public abstract class RuleLearner {
 	/**
 	 * Convert input record of values to the corresponding record of selectorIDs
 	 * </br> This function is used when disjunction selectors are NOT supported,
-	 * @param record record of values read from data set
+	 * @param value_record record of values read from data set
 	 * @return record of ids which is selectorID of atom selectors, the length of returned record can be smaller than that of the input record.
 	 */
 	protected int[] convert_values_to_selectorIDs(String[] value_record, int[] id_buffer){
 		int count=0;
 		Selector s;
-		
+
 		for(int i=0; i<value_record.length; i++){
 			s = this.attributes.get(i).getSelector(value_record[i]);
 			if(s != null && s.selectorID != Selector.INVALID_ID){
-				id_buffer[count] = s.selectorID;
-				count++;
+				if (cnf_mode) {
+					id_buffer[s.selectorID] = -1;
+				} else {
+					id_buffer[count] = s.selectorID;
+					count++;
+				}
 			}
 		}
-		
-		int[] id_record = new int[count];
-		System.arraycopy(id_buffer, 0, id_record, 0, count);
-		
+
+		int[] id_record;
+		if (cnf_mode) {
+			id_record = Arrays.stream(id_buffer).filter(selector -> selector != -1).toArray();
+		} else {
+			id_record = new int[count];
+			System.arraycopy(id_buffer, 0, id_record, 0, count);
+		}
+
 		return id_record;
 	}
     
     ///////////////////////////////////////////// LEARNING PHASE //////////////////////////////////////////////
     /**
      * Learning a rule set from the training data set fetched in. 
-     * @param metric
+     * @param metric_type
      * @param arg
      * @return the running time
      */

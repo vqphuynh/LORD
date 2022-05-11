@@ -57,4 +57,27 @@ public class PPCNode {
         this.count = count;
         this.children = new ArrayList<PPCNode>();
     }
+
+    @Override
+    public String toString() {
+        return "PPCNode{" +
+                "pre=" + pre +
+                ", pos=" + pos +
+                ", count=" + count +
+                ", itemID=" + itemID +
+                ", parent=" + parent +
+                ", children=" + children +
+                '}';
+    }
+
+    public void print(String[] conditions, int level) {
+        if (itemID >= 0 & itemID < conditions.length) {
+            System.out.println(" ".repeat(2 * level) + conditions[itemID] + ": " + count);
+        } else {
+            System.out.println(" ".repeat(2 * level) + "Root");
+        }
+        for (PPCNode node : children) {
+            node.print(conditions, level + 1);
+        }
+    }
 }

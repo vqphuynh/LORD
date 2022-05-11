@@ -20,7 +20,7 @@ import weka.filters.supervised.instance.StratifiedRemoveFolds;
  * This utility class splits an input data set into n pairs of training-testing data sets for n-fold cross-validation.
  */
 public class TrainTestSplitter{
-	private static String datasoure_filename = "data/inputs/datasets/adult.arff";
+	private static String datasource_filename = "data/inputs/datasets/tic-tac-toe.arff";
 	private static int fold_count = 10;
 	private static int seed = 1;
 	private static String output_format = null;
@@ -29,14 +29,14 @@ public class TrainTestSplitter{
 		try {
 			if(args.length < 3){
 				System.out.println("Parameters: <data filename> <number of folds> <seed> <output_format>");
-				//split(datasoure_filename, fold_count, seed, output_format);	// uncomment for debugging run
+				split(datasource_filename, fold_count, seed, output_format);	// uncomment for debugging run
 				return;
 			}
-			datasoure_filename = args[0];
+			datasource_filename = args[0];
 			fold_count = Integer.parseInt(args[1]);
 			seed = Integer.parseInt(args[2]);
 			if(args.length >= 4) output_format = args[3];
-			split(datasoure_filename, fold_count, seed, output_format);
+			split(datasource_filename, fold_count, seed, output_format);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

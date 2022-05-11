@@ -208,7 +208,7 @@ public class RTree {
 	 * @return list of the found covering rules
 	 */
 	public List<RuleInfo> find_covering_rules(int[] example){
-		List<RuleInfo> covering_rules = new ArrayList<RuleInfo>();
+		List<RuleInfo> covering_rules = new ArrayList<>();
 		
 		for(RNode child : root.children){
 			// The last id in the input example is target selector id which does not present in the tree.

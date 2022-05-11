@@ -85,7 +85,23 @@ public class RuleInfo {
 		sb.append("] -> ").append(this.headID)
 		.append("\t(p=").append(this.p)
 		.append(", n=").append(this.n)
-		.append(", hueristic_value=").append(this.heuristic_value).append(")");
+		.append(", heuristic_value=").append(this.heuristic_value).append(")");
 		return sb.toString();
 	}
+
+	/**
+	 * @return String presentation of the rule with properties as Strings
+	 */
+	public String content(String[] conditions) {
+		StringBuilder sb = new StringBuilder(200);
+		sb.append('[');
+		for(int sel_id : body) sb.append(conditions[sel_id]).append(',');
+		sb.setLength(sb.length()-1);
+		sb.append("] -> ").append(conditions[this.headID])
+				.append("\t(p=").append(this.p)
+				.append(", n=").append(this.n)
+				.append(", heuristic_value=").append(this.heuristic_value).append(")");
+		return sb.toString();
+	}
+
 }

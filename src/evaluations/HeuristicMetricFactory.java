@@ -3,7 +3,7 @@
  *
  */
 
-public package evaluations;
+package evaluations;
 
 
 public class HeuristicMetricFactory {
