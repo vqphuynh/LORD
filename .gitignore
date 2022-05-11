@@ -1,0 +1,10 @@
+.classpath
+.project
+*.arff
+*.class
+*.csv
+*.iml
+*.prefs
+.idea/*
+data/inputs/*
+data/outputs/*
