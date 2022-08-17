@@ -73,14 +73,22 @@ utilities: contain class MemoryHistogramer.java for forcing Garbage Collector to
 
 2. Run with the complied .jar file, 'lord.jar'. Be sure that you are at the working directory containing 'lord.jar' file and 'data' directory. Some commands as follows.
 	
-	java -jar ./lord.jar								: for a general help	
+	java -jar ./lord.jar								: for a general help
+	
 	java -cp ./lord.jar run.LordRun						: to view the parameters list of LORD
+	
 	java -cp ./lord.jar run.LordRun_RuleListTruncation	: to view the parameters list for LordRun_RuleListTruncation (the same as LORD's)
+	
 	java -cp ./lord.jar run.LordPlusRun					: to view the parameters list of LORDPlus (the same as LORD's)
+	
 	java -cp ./lord.jar run.WLordRun					: to view the parameter list of WLORD (LORD adaptation to interface with WEKA)
+	
 	java -cp ./lord.jar run.JRIP						: to view the parameter list to run (our) benchmarks with JRIP
+	
 	java -cp ./lord.jar run.JRIP_DiscretizedData		: to view the parameter list to run (our) benchmarks with JRIP on discretized data
+	
 	java -cp ./lord.jar run.TrainTestSplitter			: to view the parameter list to prepare k folds of train-test data sets for cross-validation benchmarks
+	
 	java -cp ./lord.jar run.DiscretizationRun			: to view the parameter list to discretize pairs of train-test data sets with FUSINTER method
 
 
