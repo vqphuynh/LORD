@@ -1,0 +1,103 @@
+This file contains commands running experiments with LORD and LORDPlus algorithms for the default m value (0.1) and the best m value 
+for each data set (small to medium data sets).
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\lymphography -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\lymphography -mt mestimate -ma 0
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\lymphography -mt mestimate -ma 0.1
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\wine -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\wine -mt mestimate -ma 0.5
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\wine -mt mestimate -ma 0.1
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\vote -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\vote -mt mestimate -ma 0
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\vote -mt mestimate -ma 0.1
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\breast -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\breast -mt mestimate -ma 0.5
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\breast -mt mestimate -ma 0.1
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\tic-tac-toe -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\tic-tac-toe -mt mestimate -ma 11
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\tic-tac-toe -mt mestimate -ma 0.1
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\german -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\german -mt mestimate -ma 0.2
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\german -mt mestimate -ma 0.1
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\car -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\car -mt mestimate -ma 0
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\car -mt mestimate -ma 0.1
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\hypothyroid -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\hypothyroid -mt mestimate -ma 0
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\hypothyroid -mt mestimate -ma 0.1
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\kr-vs-kp -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\kr-vs-kp -mt mestimate -ma 1
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\kr-vs-kp -mt mestimate -ma 0.1
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\waveform -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\waveform -mt mestimate -ma 4.5
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\waveform -mt mestimate -ma 0.1
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\mushroom -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\mushroom -mt mestimate -ma 0
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\mushroom -mt mestimate -ma 0.1
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\nursery -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\nursery -mt mestimate -ma 0
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\nursery -mt mestimate -ma 0.1
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\adult -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\adult -mt mestimate -ma 0.55
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\adult -mt mestimate -ma 0.1
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\bank -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\bank -mt mestimate -ma 0.3
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\bank -mt mestimate -ma 0.1
+
+
+
+The following is commands running experiments with LORD and LORDPlus algorithms for the default m value (0.1) and the best m value 
+for each of other data sets (medium to very large data sets which are not uploaded to this repository because of their big volumes).
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\skin -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\skin -mt mestimate -ma 0.11
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\skin -mt mestimate -ma 0.1
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\sec-mushroom -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\sec-mushroom -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\sec-mushroom -mt mestimate -ma 0.1
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\connect-4 -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\connect-4 -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\connect-4 -mt mestimate -ma 0.1
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\puc-rio -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\puc-rio -mt mestimate -ma 0.9
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\puc-rio -mt mestimate -ma 0.1
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\census -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\census -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\census -mt mestimate -ma 0.1
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\gas-sensor-11 -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\gas-sensor-11 -mt mestimate -ma 0.5
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\gas-sensor-11 -mt mestimate -ma 0.1
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\gas-sensor-12 -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\gas-sensor-12 -mt mestimate -ma 0.2
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\gas-sensor-12 -mt mestimate -ma 0.1
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\cover-type -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\cover-type -mt mestimate -ma 0
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\cover-type -mt mestimate -ma 0.1
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\pamap2 -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\pamap2 -mt mestimate -ma 1.4
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\pamap2 -mt mestimate -ma 0.1
+
+java -cp ./lord.jar run.LordRun -id .\data\inputs\susy -mt mestimate -ma 0.1
+java -cp ./lord.jar run.LordRun -id .\data\inputs\susy -mt mestimate -ma 5
+java -cp ./lord.jar run.LordPlusRun -id .\data\inputs\susy -mt mestimate -ma 0.1

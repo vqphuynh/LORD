@@ -144,108 +144,113 @@ public class PPCTree {
 	}
 	
 	/**
-     * This function will create an Nlist for each selector (selector ID) which was used to build the tree.
+     * This function will create an Nlist (using Nodelist implementation) for each selector (selector ID) 
+     * which was used to build the tree.
      * @param selector_count the number of selectors used to build the tree
      * @return list of Nlists of selectors
      */
-     public List<Nodelist> create_Nlist_for_selectors(int selector_count){    	
-    	// Prepare 'selector_nodelists', add an empty node list for each selector.
-    	// Note: selectorID of a selector is exactly its index in 'selector_nodelists' 
-    	List<Nodelist> selector_nodelists = new ArrayList<Nodelist>(selector_count);
+     public List<INlist> create_Nlist_for_selectors(int selector_count){    	
+    	// Prepare 'selector_nlists', add an empty Nodelist for each selector.
+    	// Note: selectorID of a selector is exactly its index in 'selector_nlists' 
+    	List<INlist> selector_nlists = new ArrayList<INlist>(selector_count);
     	for(int i=0; i<selector_count; i++){
-    		selector_nodelists.add(new Nodelist());
+    		selector_nlists.add(new Nodelist());
     	}
     	
-    	// Update selector_nodelists
+    	// Update selector_nlists
     	for(PPCNode child : this.root.children){
-    		this.create_nodelists_for_selectors_recursive(child, selector_nodelists);
+    		this.create_nlists_for_selectors_recursive(child, selector_nlists);
     	}
     	
-    	return selector_nodelists;
+    	for(INlist nlist : selector_nlists) nlist.shrink();
+    	
+    	return selector_nlists;
      }
-     private void create_nodelists_for_selectors_recursive(PPCNode node, List<Nodelist> selector_nodelists){
+     private void create_nlists_for_selectors_recursive(PPCNode node, List<INlist> selector_nlists){
      	// itemID of a TreeNode means Selector.selectorID
-     	selector_nodelists.get(node.itemID).add(node.pre, node.pos, node.count);
+     	selector_nlists.get(node.itemID).add(node.pre, node.pos, node.count);
      	
      	// Recursive call for child nodes
-     	for(PPCNode child : node.children) create_nodelists_for_selectors_recursive(child, selector_nodelists);
+     	for(PPCNode child : node.children) create_nlists_for_selectors_recursive(child, selector_nlists);
      }
 	
 	/**
-     * This function will create an Nlist for each selector (selector ID) which was used to build the tree.
+     * This function will create an Nlist (using Nodelist implementation) for each selector (selector ID) 
+     * which was used to build the tree.
      * @param selector_count the number of selectors used to build the tree
-     * @return list of Nlists of selectors
+     * @return array of Nlists of selectors
      */
-     public Nodelist[] create_Nlist_for_selectors_arr(int selector_count){
-    	// Prepare 'selector_nodelists', add an empty node list for each selector.
-    	// Note: selectorID of a selector is exactly its index in 'selector_nodelists' 
-    	Nodelist[] selector_nodelists = new Nodelist[selector_count];
+     public INlist[] create_Nlist_for_selectors_arr(int selector_count){
+    	// Prepare 'selector_nlists', add an empty Nodelist for each selector.
+    	// Note: selectorID of a selector is exactly its index in 'selector_nlists' 
+    	INlist[] selector_nlists = new INlist[selector_count];
     	for(int i=0; i<selector_count; i++){
-    		selector_nodelists[i] = new Nodelist();
+    		selector_nlists[i] = new Nodelist();
     	}
     	
-    	// Update selector_nodelists
+    	// Update selector_nlists
     	for(PPCNode child : this.root.children){
-    		this.create_nodelists_for_selectors_recursive(child, selector_nodelists);
+    		this.create_nlists_for_selectors_recursive_arr(child, selector_nlists);
     	}
     	
-    	for(Nodelist nlist : selector_nodelists) nlist.shrink();
+    	for(INlist nlist : selector_nlists) nlist.shrink();
     	
-    	return selector_nodelists;
-    }
+    	return selector_nlists;
+     }
      
      /**
-      * This function will create an Nlist for each selector (selector ID) which was used to build the tree.
+      * This function will create an Nlist (using Nodelist implementation) for each selector (selector ID) 
+      * which was used to build the tree.
       * </br>All created Nlists will be add to a map from string representation of each selector ID to the corresponding Nlist.
       * @param total_selector_count the number of selectors used to build the tree
       * @return The map structure from string representation of each selector ID to the corresponding Nlist
       */
-      public Map<String, Nodelist> create_selector_Nlist_map(Nodelist[] selector_nodelists){
-    	  int total_selector_count = selector_nodelists.length;
+      public Map<String, INlist> create_selector_Nlist_map(INlist[] selector_nlists){
+    	  int total_selector_count = selector_nlists.length;
     	
     	  // Add all Nlists of selectors to nlistDB
-    	  Map<String, Nodelist> selector_nodelist_map = new HashMap<String, Nodelist>(total_selector_count);
+    	  Map<String, INlist> selector_nlist_map = new HashMap<String, INlist>(total_selector_count);
     	  for(int i=0; i<total_selector_count; i++){
-    		  selector_nodelist_map.put("["+i+"]", selector_nodelists[i]);
+    		  selector_nlist_map.put("["+i+"]", selector_nlists[i]);
     	  }
      	
-    	  return selector_nodelist_map;
+    	  return selector_nlist_map;
       }
 	
 	/**
-     * This function will create an Nlist for each selector (selector ID) which was used to build the tree.
+     * This function will create an Nlist (using Nodelist implementation) for each selector (selector ID) 
+     * which was used to build the tree.
      * </br>All created Nlists will be add to a map from string representation of each selector ID to the corresponding Nlist.
      * @param total_selector_count the number of selectors used to build the tree
      * @return The map structure from string representation of each selector ID to the corresponding Nlist
      */
-     public Map<String, Nodelist> create_selector_Nlist_map(int total_selector_count){    	
-    	// Prepare 'selector_nodelists', add an empty node list for each selector.
-    	// Note: selectorID of a selector is exactly its index in 'selector_nodelists' 
-    	Nodelist[] selector_nodelists = new Nodelist[total_selector_count];
+     public Map<String, INlist> create_selector_Nlist_map(int total_selector_count){
+    	// Prepare 'selector_nlists', add an empty Nodelist for each selector.
+    	// Note: selectorID of a selector is exactly its index in 'selector_nlists' 
+    	INlist[] selector_nlists = new INlist[total_selector_count];
     	for(int i=0; i<total_selector_count; i++){
-    		selector_nodelists[i] = new Nodelist();
+    		selector_nlists[i] = new Nodelist();
     	}
     	
-    	// Update selector_nodelists
+    	// Update selector_nlists
     	for(PPCNode child : this.root.children){
-    		this.create_nodelists_for_selectors_recursive(child, selector_nodelists);
+    		this.create_nlists_for_selectors_recursive_arr(child, selector_nlists);
     	}
     	
     	// Add all Nlists of selectors to nlistDB
-    	Map<String, Nodelist> selector_nodelist_map = new HashMap<String, Nodelist>(total_selector_count);
+    	Map<String, INlist> selector_nlist_map = new HashMap<String, INlist>(total_selector_count);
     	for(int i=0; i<total_selector_count; i++){
-    		selector_nodelist_map.put("["+i+"]", selector_nodelists[i].shrink());
+    		selector_nlist_map.put("["+i+"]", selector_nlists[i].shrink());
     	}
     	
-    	return selector_nodelist_map;
+    	return selector_nlist_map;
     }
-     
-    private void create_nodelists_for_selectors_recursive(PPCNode node, Nodelist[] selector_nodelists){
+    private void create_nlists_for_selectors_recursive_arr(PPCNode node, INlist[] selector_nlists){
     	// itemID of a TreeNode means Selector.selectorID
-    	selector_nodelists[node.itemID].add(node.pre, node.pos, node.count);
+    	selector_nlists[node.itemID].add(node.pre, node.pos, node.count);
     	
     	// Recursive call for child nodes
-    	for(PPCNode child : node.children) create_nodelists_for_selectors_recursive(child, selector_nodelists);
+    	for(PPCNode child : node.children) create_nlists_for_selectors_recursive_arr(child, selector_nlists);
     }
     
     
@@ -275,4 +280,101 @@ public class PPCTree {
     	
     	return matrix;
     }
+    
+    
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////// METHODS Supporting Incremental Learning /////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    /**
+     * This function will create an Nlist (using PPCNodelist implementation) for each selector (selector ID) 
+     * which was used to build the tree.
+     * @param selector_count the number of selectors used to build the tree
+     * @return array of Nlists of selectors
+     */
+     public INlist[] create_Nlist_for_selectors_arr_inc(int selector_count){
+    	// Prepare 'selector_nlists', add an empty PPCNodelist for each selector.
+    	// Note: selectorID of a selector is exactly its index in 'selector_nlists' 
+    	INlist[] selector_nlists = new INlist[selector_count];
+    	for(int i=0; i<selector_count; i++){
+    		selector_nlists[i] = new PPCNodelist();
+    	}
+    	
+    	// Update selector_nlists
+    	for(PPCNode child : this.root.children){
+    		this.create_nlists_for_selectors_recursive_arr_inc(child, selector_nlists);
+    	}
+    	
+    	return selector_nlists;
+     }
+	 private void create_nlists_for_selectors_recursive_arr_inc(PPCNode node, INlist[] selector_nlists){
+	 	// itemID of a TreeNode means Selector.selectorID
+	 	selector_nlists[node.itemID].add(node);
+	 	
+	 	// Recursive call for child nodes
+	 	for(PPCNode child : node.children) create_nlists_for_selectors_recursive_arr_inc(child, selector_nlists);
+	 }
+	 
+	 /**
+	  * Insert a record of selector ids (in a pre-defined order) into the tree.
+	  * </br>The order of ids to insert into the tree is from right to left.
+	  * </br>
+	  * @param record an int array of selector IDs in a pre-defined order of selectors
+	  */
+	 
+	 /**
+	  * Insert a record of selector ids (in a pre-defined order) into the tree.
+	  * </br>The order of ids to insert into the tree is from right to left.
+	  * @param record an int array of selector IDs in a pre-defined order of selectors
+	  * @param selector_nlists Nlists of single selectors
+	  * @param new_ppcNodes output parameter, a list of new PPCNodes which have newly inserted into the PPCTree
+	  */
+	 public void insert_record(int[] record,
+		 						INlist[] selector_nlists,
+		 						List<PPCNode> new_ppcNodes){
+	    PPCNode new_node, mid_child, sub_node = this.root;
+	    boolean wasNotMerged;
+	    int id, position, mid_index, size;
+	
+	    // The record of ids is in ascending order.
+	    // So the order of ids to insert into the tree is from right to left.
+	    for(int i = record.length-1; i>-1; i--){
+	    	id = record[i];
+	        wasNotMerged = true;
+	        position = 0;
+	    	size = sub_node.children.size();
+	    	
+	    	
+	    	// Binary search on the id-based ordered children node list of sub_node
+	    	while (position < size) {
+	    		mid_index = (position + size) / 2;
+	            mid_child = sub_node.children.get(mid_index);
+	            
+	            if (mid_child.itemID < id) position = mid_index + 1;
+	            else if (mid_child.itemID > id) size = mid_index;
+	            else {
+	            	mid_child.count++;
+	            	sub_node = mid_child;
+	                wasNotMerged = false;
+	                break;
+	            }
+	        }
+	        
+	        if (wasNotMerged) {
+	        	new_node = new PPCNode(id, sub_node, 1);
+	        	
+	        	// collect the newly added node to insert to the corresponding Nlists
+	        	// after reassigning the pre-code and post-code
+	        	new_ppcNodes.add(new_node);
+	        	
+	        	// position now is the right index in children node list of sub_node
+	        	sub_node.children.add(position, new_node);
+	        	sub_node = new_node;
+	        }
+	        
+	        // reset the support count of the Nlist of the selector with selectorID = 'id'
+	        selector_nlists[id].resetSC();
+	    }
+	}
+    
 }

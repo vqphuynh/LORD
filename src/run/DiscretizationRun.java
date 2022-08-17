@@ -18,11 +18,12 @@ import java.util.Arrays;
 import prepr.DataDiscretizer;
 
 /**
- * Discretize all pairs of train-test data sets in a directory
+ * Discretize all pairs of train-test data sets in a directory.
+ * </br>Discretization is performed on the train set, then apply on the corresponding test set
  *
  */
 public class DiscretizationRun {
-	private static String directory = "data/inputs/german_arff";
+	private static String directory = "data/inputs/german";
 	private static boolean one_outputfile = true;
 	
 	public static void main(String[] args) throws Exception{

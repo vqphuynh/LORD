@@ -8,6 +8,8 @@ package run;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 import rl.RuleInfo;
 import rl.eg.WLord;
@@ -17,6 +19,7 @@ import weka.core.converters.ConverterUtils.DataSource;
 import weka.filters.Filter;
 import weka.filters.supervised.instance.StratifiedRemoveFolds;
 import evaluations.HeuristicMetricFactory;
+import evaluations.ModelEvaluation;
 
 /**
  * Cross-validation benchmark for WLord which an implementation of LORD algorithm to interface with WEKA
@@ -96,11 +99,12 @@ public class WLordRun {
 		filter.setNumFolds(folds_count);
 		filter.setSeed(seed);
 		
+		long running_time_sum = 0;
 		double rule_count_sum = 0;
 		double avg_rule_length_sum = 0;
-		long running_time_sum = 0;
-		double hit_count_sum = 0;
-		double miss_count_sum = 0;
+		double recall_sum = 0;
+		double precision_sum = 0;
+		double f1_score_sum = 0;
 		double accuracy_sum = 0;
 		
 		for(int i=1; i<=folds_count; i++){
@@ -128,23 +132,20 @@ public class WLordRun {
 			output.write(String.format("Number of testing instances: %d\n", test_instances.size()));
 			
 			// testing
-	 		double hit_count = 0;
-	 		double miss_count = 0;
+			List<Integer> y_true = new ArrayList<Integer>();
+			List<Integer> y_pred = new ArrayList<Integer>();
 		    for (Instance instance : test_instances) {
 		        double predicted_class = classifier.classifyInstance(instance);
-		        if(predicted_class == instance.classValue()) hit_count++;
-		        else{
-		        	miss_count++;
-		        	//output.write(String.format("Instances: %s\n", instance.toString()));
-		        	//output.write(String.format("Predicted class: %f, class: %f\n", predicted_class, instance.classValue()));
-		        }
+		        y_pred.add((int) predicted_class);
+		        y_true.add((int) instance.classValue());
+		        //output.write(String.format("Instances: %s\n", instance.toString()));
+	        	//output.write(String.format("Predicted class: %f, class: %f\n", predicted_class, instance.classValue()));
 		    }
-		    
 		    long running_time = System.currentTimeMillis() - start;
 		    
 		    double avg_rule_length = 0;
 		    output.write("Rule list:\n");
-		    if(classifier.rm.ruleList.size() < 1000){
+		    if(classifier.rm.ruleList.size() < 10000){
 		    	for(RuleInfo rule : classifier.rm.ruleList){
 			    	avg_rule_length += rule.body.length;
 			    	output.write(rule.content());
@@ -157,35 +158,42 @@ public class WLordRun {
 			    }
 		    }
 		    
+		    ModelEvaluation me = new ModelEvaluation();
+		    me.fetch_prediction_result(y_true, y_pred, null);
+		    double[] scores = me.get_not_weighted_f1_score();
+		    
+		    running_time_sum += running_time;
 		    int rule_count = classifier.rm.ruleList.size();
+		    rule_count_sum += rule_count;
 		    avg_rule_length = avg_rule_length/rule_count;
 		    avg_rule_length_sum += avg_rule_length;
-		    rule_count_sum += rule_count;
-		    running_time_sum += running_time;
-		    hit_count_sum += hit_count;
-		    miss_count_sum += miss_count;
-		    
-		    double accuracy = hit_count/test_instances.size();
-		    accuracy_sum += accuracy;
+		    recall_sum += scores[ModelEvaluation.recall_idx];
+		    precision_sum += scores[ModelEvaluation.precision_idx];
+		    f1_score_sum += scores[ModelEvaluation.f1_score_idx];
+		    accuracy_sum += me.getAccuracy();
 		    
 		    output.write("--------------------------------\n");
 		    output.write(String.format("Fold: %d\n", i));
+		    output.write(String.format("Running time: %d ms\n", running_time));
 		    output.write(String.format("Rule count: %d\n", rule_count));
 		    output.write(String.format("Average rule length: %f\n", avg_rule_length));
-		    output.write(String.format("Hit count: %.0f\n", hit_count));
-		    output.write(String.format("Miss count: %.0f\n", miss_count));
-		    output.write(String.format("Accuracy: %f\n", accuracy));
-		    output.write(String.format("Running time: %d ms\n", running_time));
+		    output.write(String.format("Recall: %f\n", scores[ModelEvaluation.recall_idx]));
+		    output.write(String.format("Precision: %f\n", scores[ModelEvaluation.precision_idx]));
+		    output.write(String.format("F1-score: %f\n", scores[ModelEvaluation.f1_score_idx]));
+		    output.write(String.format("Accuracy: %f\n", me.getAccuracy()));
+		    
 		    output.write("====================================================================================\n");
 		    output.flush();
 		}
 		
 		output.write("SUMMARY:\n");
-		output.write(String.format("Average rule count: %f\n", rule_count_sum/folds_count));
-		output.write(String.format("Average rule length: %f\n", avg_rule_length_sum/folds_count));
 		output.write(String.format("Average running time: %d ms\n", running_time_sum/folds_count));
-		output.write(String.format("Micro average accuracy: %f\n", hit_count_sum/(hit_count_sum+miss_count_sum)));
-		output.write(String.format("Macro average accuracy: %f\n", accuracy_sum/folds_count));
+	    output.write(String.format("Average rule count: %f\n", rule_count_sum/folds_count));
+	    output.write(String.format("Average rule length: %f\n", avg_rule_length_sum/folds_count));
+	    output.write(String.format("Average recall: %f\n", recall_sum/folds_count));
+	    output.write(String.format("Average precision: %f\n", precision_sum/folds_count));
+	    output.write(String.format("Average F1-score: %f\n", f1_score_sum/folds_count));
+	    output.write(String.format("Average accuracy: %f\n", accuracy_sum/folds_count));
 		
 		output.flush();
 		output.close();

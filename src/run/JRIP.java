@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -23,6 +24,7 @@ import weka.core.Instances;
 import weka.core.converters.ConverterUtils.DataSource;
 import weka.filters.Filter;
 import weka.filters.supervised.instance.StratifiedRemoveFolds;
+import evaluations.ModelEvaluation;
 
 /**
  * Cross-validation benchmark for JRIP (RIPPER) algorithm
@@ -39,7 +41,8 @@ public class JRIP {
 	public static void main(String[] args) throws Exception{
 		// System.out.println("------------------------------Way 1------------------------------");
 		// It's weird that way 1 (train and test instances in two separate files) gives lower accuracy than that of way 2
-		// run_cross_validation(cross_validation_data_dir, output_filename);
+		// run_cross_validation("data/inputs/kr-vs-kp");
+		 
 		
 		// System.out.println("------------------------------Way 2------------------------------");
 		// Way 2 (train and test instances in the same file) gives higher accuracy than that of way 1
@@ -60,13 +63,11 @@ public class JRIP {
 	}
 	
 	/**
-	 * Run cross validation for JRip, an implementation of RIPPER in WEKA library.
-	 * @param data_dir_path path to a directory which contains all pairs of train and test data sets.
-	 * @param output_file text file to output results
-	 * @throws Exception 
-	 * @throws  
+	 * Cross validation benchmark
+	 * @param data_dir_path
+	 * @throws Exception
 	 */
-	public static void run_cross_validation(String data_dir_path, String output_file) throws Exception{
+	public static void run_cross_validation(String data_dir_path) throws Exception{
 	    File data_dir = new File(data_dir_path);
 	    File[] train_files = data_dir.listFiles(new FilenameFilter() {
 												        @Override
@@ -95,27 +96,18 @@ public class JRIP {
 	    	System.out.println("------------------------------");
 	    }
 		
-		BufferedWriter output = new BufferedWriter(new FileWriter(output_file));
-		
-		double[] sums = new double[5];
+		double[] sums = new double[6];
 		for(int i=0; i<results.length; i++){
 			double[] sub_results = results[i];
 			for(int j=0; j<sub_results.length; j++) sums[j] += sub_results[j];
-			output.write(String.format("Fold %d:\n", (i+1)));
-			output.write(String.format("\tRunning time: %.0f ms\n", sub_results[0]));
-			output.write(String.format("\tRule count: %.0f\n", sub_results[1]));
-			output.write(String.format("\tHit count: %.0f\n", sub_results[2]));
-			output.write(String.format("\tMiss count: %.0f\n", sub_results[3]));
-			output.write(String.format("\tAccuracy: %f\n", sub_results[4]));
-			output.newLine();
 		}
-		output.write("--------------------------------------------------------\n");
-		output.write(String.format("Average running time: %.0f ms\n", sums[0]/results.length));
-		output.write(String.format("Average rule count: %.0f\n", sums[1]/results.length));
-		output.write(String.format("Micro average accuracy: %f\n", sums[2]/(sums[2]+sums[3])));
-		output.write(String.format("Macro average accuracy: %f\n", sums[4]/results.length));
-		output.flush();
-		output.close();
+		System.out.println("\nSUMMARY:");
+		System.out.println(String.format("Average running time: %.0f ms", sums[0]/results.length));
+		System.out.println(String.format("Average rule count: %.0f", sums[1]/results.length));
+		System.out.println(String.format("Average recall: %f", sums[2]/results.length));
+		System.out.println(String.format("Average precision: %f", sums[3]/results.length));
+		System.out.println(String.format("Average macro f1-score: %f", sums[4]/results.length));
+		System.out.println(String.format("Average accuracy: %f", sums[5]/results.length));
 	}
 	
 	/**
@@ -128,7 +120,7 @@ public class JRIP {
 	 */
 	public static double[] run(String train_filename, String test_filename) throws IOException, Exception {
 	    long start = System.currentTimeMillis();
-	    double[] results = new double[5];
+	    double[] results = new double[6];
 	    
 	    // load training data
  		Instances train_instances = new DataSource(train_filename).getDataSet();
@@ -150,25 +142,28 @@ public class JRIP {
  		test_instances.setClassIndex(test_instances.numAttributes() - 1);
 	    
  		// testing
- 		double hit_count = 0;
- 		double miss_count = 0;
+ 		List<Integer> y_true = new ArrayList<Integer>();
+		List<Integer> y_pred = new ArrayList<Integer>();
 	    for (Instance instance : test_instances) {
 	        double predicted_class = classifier.classifyInstance(instance);
-	        if(predicted_class == instance.classValue()) hit_count++;
-	        else{
-	        	miss_count++;
-//	        	System.out.println(String.format("Instances: %s", instance.toString()));
-//	        	System.out.println(String.format("Predicted class: %f, class: %f", predicted_class, instance.classValue()));
-//	        	System.out.println();
-	        }
+	        y_pred.add((int) predicted_class);
+	        y_true.add((int) instance.classValue());
 	    }
+	    long run_time = System.currentTimeMillis() - start;
 	    
-	    results[0] = System.currentTimeMillis() - start;
+	    ModelEvaluation me = new ModelEvaluation();
+	    me.fetch_prediction_result(y_true, y_pred, null);
+	    double[] scores = me.get_not_weighted_f1_score();
+	    
+	    results[0] = run_time;
 	    results[1] = rule_set.size();
-	    results[2] = hit_count;
-	    results[3] = miss_count;
-	    results[4] = hit_count/test_instances.size();
-	    System.out.println(String.format("Hit count: %f, Miss count: %f, Accuracy: %f", hit_count, miss_count, results[4]));
+	    results[2] = scores[ModelEvaluation.recall_idx];
+	    results[3] = scores[ModelEvaluation.precision_idx];
+	    results[4] = scores[ModelEvaluation.f1_score_idx];
+	    results[5] = me.getAccuracy();
+	    System.out.println(String.format("Testing example count: %d", y_pred.size()));
+	    System.out.println(String.format("Run time: %.0f ms, Rule count: %.0f, Recall: %f, Precision: %f, Macro f1-score (not weighted): %f, Accuracy: %f", 
+	    					results[0], results[1], results[2], results[3], results[4], results[5]));
 	    return results;
 	}
 	
@@ -180,7 +175,6 @@ public class JRIP {
 	 * @param output_filename
 	 * @throws Exception
 	 */
-	
 	public static void run_cross_validation_direct(String data_filename,
 													int folds_count,
 													int seed,
@@ -209,11 +203,12 @@ public class JRIP {
 		filter.setNumFolds(folds_count);
 		filter.setSeed(seed);
 		
+		long running_time_sum = 0;
 		double rule_count_sum = 0;
 		double avg_rule_length_sum = 0;
-		long running_time_sum = 0;
-		double hit_count_sum = 0;
-		double miss_count_sum = 0;
+		double recall_sum = 0;
+		double precision_sum = 0;
+		double f1_score_sum = 0;
 		double accuracy_sum = 0;
 		
 		for(int i=1; i<=folds_count; i++){
@@ -244,19 +239,16 @@ public class JRIP {
 			Instances test_instances = Filter.useFilter(data, filter);
 			output.write(String.format("Number of testing instances: %d\n", test_instances.size()));
 			
-			// testing
-	 		double hit_count = 0;
-	 		double miss_count = 0;
+			// testing		    
+		    List<Integer> y_true = new ArrayList<Integer>();
+			List<Integer> y_pred = new ArrayList<Integer>();
 		    for (Instance instance : test_instances) {
 		        double predicted_class = classifier.classifyInstance(instance);
-		        if(predicted_class == instance.classValue()) hit_count++;
-		        else{
-		        	miss_count++;
-		        	//output.write(String.format("Instances: %s\n", instance.toString()));
-		        	//output.write(String.format("Predicted class: %f, class: %f\n", predicted_class, instance.classValue()));
-		        }
+		        y_pred.add((int) predicted_class);
+		        y_true.add((int) instance.classValue());
+		        //output.write(String.format("Instances: %s\n", instance.toString()));
+	        	//output.write(String.format("Predicted class: %f, class: %f\n", predicted_class, instance.classValue()));
 		    }
-		    
 		    long running_time = System.currentTimeMillis() - start;
 		    
 		    double avg_rule_length = 0;
@@ -267,25 +259,30 @@ public class JRIP {
 		    	output.write('\n');
 		    }
 		    
+		    ModelEvaluation me = new ModelEvaluation();
+		    me.fetch_prediction_result(y_true, y_pred, null);
+		    double[] scores = me.get_not_weighted_f1_score();
+		    
+		    running_time_sum += running_time;
 		    int rule_count = classifier.getRuleset().size();
+		    rule_count_sum += rule_count;
 		    avg_rule_length = avg_rule_length/rule_count;
 		    avg_rule_length_sum += avg_rule_length;
-		    rule_count_sum += rule_count;
-		    running_time_sum += running_time;
-		    hit_count_sum += hit_count;
-		    miss_count_sum += miss_count;
-		    
-		    double accuracy = hit_count/test_instances.size();
-		    accuracy_sum += accuracy;
+		    recall_sum += scores[ModelEvaluation.recall_idx];
+		    precision_sum += scores[ModelEvaluation.precision_idx];
+		    f1_score_sum += scores[ModelEvaluation.f1_score_idx];
+		    accuracy_sum += me.getAccuracy();
 		    
 		    output.write("--------------------------------\n");
 		    output.write(String.format("Fold: %d\n", i));
+		    output.write(String.format("Running time: %d ms\n", running_time));
 		    output.write(String.format("Rule count: %d\n", rule_count));
 		    output.write(String.format("Average rule length: %f\n", avg_rule_length));
-		    output.write(String.format("Hit count: %.0f\n", hit_count));
-		    output.write(String.format("Miss count: %.0f\n", miss_count));
-		    output.write(String.format("Accuracy: %f\n", accuracy));
-		    output.write(String.format("Running time: %d ms\n", running_time));
+		    output.write(String.format("Recall: %f\n", scores[ModelEvaluation.recall_idx]));
+		    output.write(String.format("Precision: %f\n", scores[ModelEvaluation.precision_idx]));
+		    output.write(String.format("F1-score: %f\n", scores[ModelEvaluation.f1_score_idx]));
+		    output.write(String.format("Accuracy: %f\n", me.getAccuracy()));
+		    
 		    output.write("====================================================================================\n");
 		    output.flush();
 		    
@@ -294,11 +291,13 @@ public class JRIP {
 		}
 		
 		output.write("SUMMARY:\n");
-		output.write(String.format("Average rule count: %f\n", rule_count_sum/folds_count));
-		output.write(String.format("Average rule length: %f\n", avg_rule_length_sum/folds_count));
 		output.write(String.format("Average running time: %d ms\n", running_time_sum/folds_count));
-		output.write(String.format("Micro average accuracy: %f\n", hit_count_sum/(hit_count_sum+miss_count_sum)));
-		output.write(String.format("Macro average accuracy: %f\n", accuracy_sum/folds_count));
+	    output.write(String.format("Average rule count: %f\n", rule_count_sum/folds_count));
+	    output.write(String.format("Average rule length: %f\n", avg_rule_length_sum/folds_count));
+	    output.write(String.format("Average recall: %f\n", recall_sum/folds_count));
+	    output.write(String.format("Average precision: %f\n", precision_sum/folds_count));
+	    output.write(String.format("Average F1-score: %f\n", f1_score_sum/folds_count));
+	    output.write(String.format("Average accuracy: %f\n", accuracy_sum/folds_count));
 		
 		output.flush();
 		output.close();

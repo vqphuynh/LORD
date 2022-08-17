@@ -9,7 +9,7 @@ import evaluations.HeuristicMetricFactory;
 import evaluations.HeuristicMetricFactory.METRIC_TYPES;
 
 public class Arguments {
-	public int thread_count = Math.max(1, Runtime.getRuntime().availableProcessors()/2);
+	public int thread_count = Math.max(2, Runtime.getRuntime().availableProcessors()/2);
 	public String input_filename = null;
 	public String output_filename = null;
 	public String input_directory = null;

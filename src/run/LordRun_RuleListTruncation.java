@@ -29,6 +29,7 @@ import rl.RuleInfo;
 import rl.eg.Lord;
 import arg.Arguments;
 import arg.LordArgHelper;
+import evaluations.ModelEvaluation;
 import evaluations.HeuristicMetricFactory.METRIC_TYPES;
 
 /**
@@ -37,12 +38,13 @@ import evaluations.HeuristicMetricFactory.METRIC_TYPES;
  */
 public class LordRun_RuleListTruncation {
 	private static List<Double> remaining_portions;
-	private static List<Double> hit_counts;
-	private static List<Double> miss_counts;
+	private static List<Long> prediction_times;
 	private static List<Double> rule_counts;
 	private static List<Double> avg_rule_lengths;
-	private static List<Double> accuracies;
-	private static List<Long> prediction_times;
+	private static List<Double> recalls;			// not_weighted average recalls w.r.t. classes
+	private static List<Double> precisions;			// not_weighted average precisions w.r.t. classes
+	private static List<Double> macro_f1_scores;	// not_weighted average f1_scores w.r.t classes
+	private static List<Double> accuracies;			// which are also micro f1 scores
 	
 	private static double truncate_portion_step = 0.05;
 	
@@ -53,7 +55,7 @@ public class LordRun_RuleListTruncation {
         
         LordArgHelper arg_helper = new LordArgHelper();
         Arguments arguments = new Arguments();
-        //arguments.input_directory = "data/inputs/adult_arff";	// uncomment this line for debugging run
+        //arguments.input_directory = "data/inputs/adult";	// uncomment this line for debugging run
         arguments.metric_type = METRIC_TYPES.MESTIMATE;
         arguments.metric_arg = 0.1;
         
@@ -62,7 +64,7 @@ public class LordRun_RuleListTruncation {
         if(arguments.output_directory == null && arguments.input_directory != null){
         	Path path = Paths.get(arguments.input_directory);
         	String simple_dir_name = path.getName(path.getNameCount()-1).toString() + strDate;
-        	arguments.output_directory = Paths.get("data/outputs/eg_rules_truncations", simple_dir_name).toString();
+        	arguments.output_directory = Paths.get("data/outputs/lord_rules_truncations", simple_dir_name).toString();
         }
         
         if(!arg_helper.is_valid(arguments)){
@@ -79,6 +81,7 @@ public class LordRun_RuleListTruncation {
 	}
 	
 	/**
+	 * Run cross validation.
 	 * @param data_dir_path contain all pairs of train and test data sets
 	 * @param output_dir_path the base output directory
 	 * @throws Exception
@@ -129,7 +132,7 @@ public class LordRun_RuleListTruncation {
 		System.setOut(out);
 		
 		Lord alg = new Lord();
-		alg.setThreadCount(arguments.thread_count);
+		alg.setThreadCount(arguments.thread_count, true);
 		
 		System.out.println(String.format("Execute algorithm %s on dataset:\n %s \n %s",
 											alg.getClass().getSimpleName(), train_filename, test_filename));
@@ -143,7 +146,7 @@ public class LordRun_RuleListTruncation {
 		
 		System.out.println(String.format("preprocess time: %d ms", times[0]));
 		System.out.println(String.format("tree building time: %d ms", times[1]));
-		System.out.println(String.format("selector-nodelists generation time: %d ms", times[2]));
+		System.out.println(String.format("selector-nlists generation time: %d ms", times[2]));
 		System.out.println(String.format("Total init time: %d ms", init_time));
 		
 		long learning_time = alg.learning(arguments.metric_type, arguments.metric_arg);
@@ -161,12 +164,13 @@ public class LordRun_RuleListTruncation {
 		
 		int loop_count = (int) (1/truncate_portion_step);
 		remaining_portions = new ArrayList<Double>(loop_count);
-		hit_counts = new ArrayList<Double>(loop_count);
-	    miss_counts = new ArrayList<Double>(loop_count);
+	    prediction_times = new ArrayList<Long>(loop_count);
 	    rule_counts = new ArrayList<Double>(loop_count);
 	    avg_rule_lengths = new ArrayList<Double>(loop_count);
-	    accuracies = new ArrayList<Double>(loop_count);
-	    prediction_times = new ArrayList<Long>(loop_count);
+	    recalls = new ArrayList<Double>(loop_count);
+		precisions = new ArrayList<Double>(loop_count);
+		macro_f1_scores = new ArrayList<Double>(loop_count);
+		accuracies = new ArrayList<Double>(loop_count);
 	    
 		for(int i=0; i<loop_count; i++){
 			testing_with_rules_truncations(alg, test_filename, i*truncate_portion_step);
@@ -180,7 +184,7 @@ public class LordRun_RuleListTruncation {
 			alg.rm.truncate(truncate_portion);
 		}
 		
-		//get rule count and average rule length
+		// get rule count and average rule length
 		double rule_count, avg_rule_length = 0;
 		if(alg.rm.truncatedRuleList == null) alg.rm.truncatedRuleList = alg.rm.ruleList;
 		rule_count = alg.rm.truncatedRuleList.size();
@@ -189,34 +193,38 @@ public class LordRun_RuleListTruncation {
 		}
 		avg_rule_length = avg_rule_length/rule_count;
 		
-		//test
+		// test
 		DataReader reader = DataReader.getDataReader(test_filename);
 		String[] value_record;
 		IntHolder predicted_classID = new IntHolder(-1);
 		int[] example_selectorIDs;
-		double hit_count = 0, miss_count = 0;
+		
+		List<Integer> y_true = new ArrayList<Integer>();
+		List<Integer> y_pred = new ArrayList<Integer>();
 		
 		long start = System.currentTimeMillis();
 		reader.bind_datasource(test_filename);
 		while((value_record = reader.next_record()) != null){
 			example_selectorIDs = alg.predict(value_record, predicted_classID);
-			
-			if(predicted_classID.value == example_selectorIDs[example_selectorIDs.length-1])
-				hit_count++;
-			else{
-				miss_count++;
-			}
+			y_pred.add(predicted_classID.value);
+			y_true.add(example_selectorIDs[example_selectorIDs.length-1]);
 		}
 		long prediction_time = System.currentTimeMillis() - start;
-		double accuracy = hit_count/(hit_count+miss_count);
+		
+		// calculate performance measurements
+		ModelEvaluation me = new ModelEvaluation();
+		//me.fetch_prediction_result(y_true, y_pred, alg.getClassIDs());
+		me.fetch_prediction_result(y_true, y_pred, null);
+		double[] scores = me.get_not_weighted_f1_score();
 		
 		remaining_portions.add(1-truncate_portion);
-		hit_counts.add(hit_count);
-		miss_counts.add(miss_count);
+		prediction_times.add(prediction_time);
 		rule_counts.add(rule_count);
 		avg_rule_lengths.add(avg_rule_length);
-		accuracies.add(accuracy);
-		prediction_times.add(prediction_time);
+		recalls.add(scores[ModelEvaluation.recall_idx]);
+		precisions.add(scores[ModelEvaluation.precision_idx]);
+		macro_f1_scores.add(scores[ModelEvaluation.f1_score_idx]);
+		accuracies.add(me.getAccuracy());		
 	}
 	
 	static void write_results(Arguments arguments) throws IOException{
@@ -224,18 +232,19 @@ public class LordRun_RuleListTruncation {
     			Paths.get(arguments.output_directory, "results_with_rules_truncations.csv").toString()));
     	
     	StringBuilder sb = new StringBuilder(200);
-    	sb.append("remaining_portions, hit_counts, miss_counts, rule_counts, avg_rule_lengths, accuracies, prediction_time(ms)\n");
+    	sb.append("remaining_portions, prediction_time(ms), rule_counts, avg_rule_lengths, recalls, precisions, macro_f1_scores(not weighted), accuracies\n");
     	output.write(sb.toString());
     	
     	for(int i=remaining_portions.size()-1; i>-1; i--){
     		sb.setLength(0);
     		sb.append(remaining_portions.get(i))
-        	.append(", ").append(hit_counts.get(i))
-        	.append(", ").append(miss_counts.get(i))
+    		.append(", ").append(prediction_times.get(i))
         	.append(", ").append(rule_counts.get(i))
         	.append(", ").append(avg_rule_lengths.get(i))
+        	.append(", ").append(recalls.get(i))
+        	.append(", ").append(precisions.get(i))
+        	.append(", ").append(macro_f1_scores.get(i))
         	.append(", ").append(accuracies.get(i))
-        	.append(", ").append(prediction_times.get(i))
         	.append('\n');
         	output.write(sb.toString());
     	}

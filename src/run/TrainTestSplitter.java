@@ -17,7 +17,7 @@ import weka.filters.Filter;
 import weka.filters.supervised.instance.StratifiedRemoveFolds;
 
 /**
- * This utility class splits an input data set into n pairs of training-testing data sets for n-fold cross-validation.
+ * This utility class splits an input data set into n pairs of training-testing data sets for n-fold cross-validation using WEKA lib.
  */
 public class TrainTestSplitter{
 	private static String datasoure_filename = "data/inputs/datasets/adult.arff";

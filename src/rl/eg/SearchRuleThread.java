@@ -5,12 +5,10 @@
 
 package rl.eg;
 
-import java.util.List;
 import java.util.Map;
 
-import prepr.Selector;
+import rl.INlist;
 import rl.IntHolder;
-import rl.Nodelist;
 import rl.RuleInfo;
 import rl.RuleSearcher;
 import evaluations.HeuristicMetric;
@@ -19,8 +17,8 @@ import evaluations.HeuristicMetricFactory.METRIC_TYPES;
 
 class SearchRuleThread extends Thread{
 	private int[][] selectorID_records;
-	private List<Selector> constructing_selectors;
-	private Map<String, Nodelist> selector_nodelist_map;
+	private INlist[] selector_nlists;
+	private Map<String, INlist> selector_nlist_map;
 	private Map<String, RuleInfo> rule_set;
 	private METRIC_TYPES metric_type;
 	private double arg;
@@ -28,16 +26,16 @@ class SearchRuleThread extends Thread{
 	private int id;
 	
 	public SearchRuleThread(int[][] selectorID_records,
-						List<Selector> constructing_selectors,
-						Map<String, Nodelist> selector_nodelist_map,
+						INlist[] selector_nlists,
+						Map<String, INlist> selector_nlist_map,
 						Map<String, RuleInfo> rule_set,
 						METRIC_TYPES metric_type,
 						double arg,
 						IntHolder globalIndex,
 						int id){
 		this.selectorID_records = selectorID_records;
-		this.constructing_selectors = constructing_selectors;
-		this.selector_nodelist_map = selector_nodelist_map;
+		this.selector_nlists = selector_nlists;
+		this.selector_nlist_map = selector_nlist_map;
 		this.rule_set = rule_set;
 		this.metric_type = metric_type;
 		this.arg = arg;
@@ -71,10 +69,10 @@ class SearchRuleThread extends Thread{
 			int[] body_selector_IDs = new int[example.length-1];
 			System.arraycopy(example, 0, body_selector_IDs, 0, body_selector_IDs.length);
 			
-			arguments[4] = this.constructing_selectors.get(example_classID).frequency;
+			arguments[4] = this.selector_nlists[example_classID].supportCount();
 			arguments[5] = arguments[3] - arguments[4];
 			
-			greedy_best_rule = RuleSearcher.search_for_greedy_best_rule(this.selector_nodelist_map,
+			greedy_best_rule = RuleSearcher.search_for_greedy_best_rule(this.selector_nlist_map,
 																		body_selector_IDs,
 																		example_classID,
 																		metric,

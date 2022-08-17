@@ -24,6 +24,12 @@ public class RuleManager {
 	public List<RuleInfo> covering_rules = null;
 	public RuleInfo selected_rule = null;
 	
+	/**
+	 * Find the best covering rule.
+	 * </br> All the covering rules (for just this example) are stored in 'covering_rules' property.
+	 * @param example
+	 * @return the best covering rule
+	 */
 	public RuleInfo get_best_covering_rule(int[] example){
 		this.covering_rules = this.ruleTree.find_covering_rules(example);
 		
@@ -33,17 +39,6 @@ public class RuleManager {
 		
 		return (selected_rule = RuleComparator.select_best_rule(this.covering_rules));
 	}
-	
-//	private RuleInfo select_best_rule(){
-//    	RuleInfo chosen_rule = covering_rules.get(0);
-//    	for(RuleInfo rule : covering_rules){
-//    		if(chosen_rule.heuristic_value < rule.heuristic_value || 
-//    				(chosen_rule.heuristic_value == rule.heuristic_value && chosen_rule.p < rule.p)){
-//    			chosen_rule = rule;
-//    		}
-//    	}
-//    	return (selected_rule = chosen_rule);
-//    }
 	
 	/**
 	 * Sort rules in the rule list decreasingly based on heuristic values and then true positive values.
@@ -71,6 +66,11 @@ public class RuleManager {
 	
 	/////////////////////////////////////////////////////// CONSTRUCTORS ///////////////////////////////////////////////////////
 	
+	/**
+	 * Without filter
+	 * @param default_class_id
+	 * @param rule_set
+	 */
 	public RuleManager(int default_class_id, Map<String, RuleInfo> rule_set){
 		this.defaultClassID = default_class_id;
 		
@@ -91,6 +91,12 @@ public class RuleManager {
 		}
 	}
 	
+	/**
+	 * Filter from only one input rule set
+	 * @param default_class_id
+	 * @param rule_set
+	 * @param selectorID_records
+	 */
 	public RuleManager(int default_class_id, Map<String, RuleInfo> rule_set, int[][] selectorID_records){
 		this.defaultClassID = default_class_id;
 		
@@ -114,7 +120,9 @@ public class RuleManager {
 			RuleInfo selected_rule = init_rule;
 			
 			for(RuleInfo rule : covering_rules){
-				if(rule.headID == classID && (selected_rule.heuristic_value < rule.heuristic_value || 
+				// Do not need to compare on classes, because we only examine on full covering rules (match the rule head)
+				if(rule.headID == classID && 
+						(selected_rule.heuristic_value < rule.heuristic_value || 
 	    				(selected_rule.heuristic_value == rule.heuristic_value && selected_rule.p < rule.p))){
 					selected_rule = rule;
 				}
@@ -134,6 +142,13 @@ public class RuleManager {
 		}
 	}
 	
+	/**
+	 * Filter from many input rule sets
+	 * @param default_class_id
+	 * @param ruleSet_list
+	 * @param selectorID_records
+	 * @param thread_count
+	 */
 	public RuleManager(int default_class_id,
 						List<Map<String, RuleInfo>> ruleSet_list,
 						int[][] selectorID_records,

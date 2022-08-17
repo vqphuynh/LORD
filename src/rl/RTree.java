@@ -78,8 +78,10 @@ public class RTree {
         }
         
         // The last node contains the reference to the rule
-        if((subNode.rule == null) || (subNode.rule != null && subNode.rule.heuristic_value < rule.heuristic_value)){
+        if(subNode.rule == null){
         	subNode.rule = rule;
+        }else{
+        	subNode.rule = RuleComparator.select_better_rule(subNode.rule, rule);
         }
     }
 	
@@ -129,8 +131,10 @@ public class RTree {
         }
         
         // The last node contains the reference to the rule
-        if((subNode.rule == null) || (subNode.rule != null && subNode.rule.heuristic_value < rule.heuristic_value)){
+        if(subNode.rule == null){
         	subNode.rule = rule;
+        }else{
+        	subNode.rule = RuleComparator.select_better_rule(subNode.rule, rule);
         }
     }
 	

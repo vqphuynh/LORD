@@ -172,9 +172,9 @@ public class WLord extends Lord implements Classifier, CapabilitiesHandler {
 		this.preprocessing(instances);
 		
 		PPCTree ppcTree = this.create_PPCtree(instances);
-		this.selector_nodelists = ppcTree.create_Nlist_for_selectors_arr(this.selector_count);
-        this.selector_nodelist_map = ppcTree.create_selector_Nlist_map(this.selector_nodelists);
-        RuleSearcher.setSelectorNodelists(this.selector_nodelists);
+		this.selector_nlists = ppcTree.create_Nlist_for_selectors_arr(this.selector_count);
+        this.selector_nlist_map = ppcTree.create_selector_Nlist_map(this.selector_nlists);
+        RuleSearcher.setSelectorNlists(this.selector_nlists);
         
 		super.learning(this.arguments.metric_type, this.arguments.metric_arg);
 	}

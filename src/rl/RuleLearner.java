@@ -5,6 +5,8 @@
 
 package rl;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,7 +26,7 @@ import evaluations.HeuristicMetricFactory.METRIC_TYPES;
 public abstract class RuleLearner {
 
 	///////////////////////////////////////////////PROPERTIES SECTION//////////////////////////////////////////////	
-    protected int thread_count = Math.max(1, Runtime.getRuntime().availableProcessors()/2);
+    protected int thread_count = Math.max(2, Runtime.getRuntime().availableProcessors()/2);
     
     protected String train_filename = null;	// file name of the training dataset
 	
@@ -61,11 +63,10 @@ public abstract class RuleLearner {
 	protected List<Selector> constructing_selectors;
 	
 	/**
-	 * Node lists of 1selector sets in <b>constructing_selectors</b>
+	 * Nlists of selectors in <b>constructing_selectors</b>
 	 */
-	//protected List<Nodelist> selector_nodelists;
-	protected Map<String, Nodelist> selector_nodelist_map;
-	protected Nodelist[] selector_nodelists;
+	protected Map<String, INlist> selector_nlist_map;
+	protected INlist[] selector_nlists;
 	protected int[][] selectorID_records;	// training examples in corresponding selector ID sorted in the predefined order O
 	
 	protected List<Integer> classIDs;	// all class IDs
@@ -96,12 +97,21 @@ public abstract class RuleLearner {
     	return this.thread_count;
     }
     
+    public List<Integer> getClassIDs(){
+    	return this.classIDs;
+    }
+    
     /**
-    @param thread_num number of threads to run, 
-    * overwrite but not exceed the default number of threads = number of physical cores
-    */
-    public void setThreadCount(int thread_num){
-    	if(thread_num > 0) this.thread_count = Math.min(this.thread_count, thread_num);
+     * 
+     * @param thread_num number of threads to run
+     * @param can_exceed_core_num whether the desired number of threads can exceed the number of physical cores.
+     */
+    public void setThreadCount(int thread_num, boolean can_exceed_core_num){
+    	if(can_exceed_core_num){
+    		if(thread_num > 0) this.thread_count = thread_num;
+    	}else{
+    		if(thread_num > 0) this.thread_count = Math.min(this.thread_count, thread_num);
+    	}
     }
     
     public int getAttrCount(){
@@ -123,8 +133,8 @@ public abstract class RuleLearner {
     public RuleLearner(){}
     
     /**
-     * Do data preprocessing, build tree and then create N-list for each distinct selector
-     * @return running time of the three stages: [0] preprocessing, [1] build tree, [2] N-list for each distinct selector
+     * Do data preprocessing, build PPCTree and then create Nlist for each distinct selector
+     * @return running time of the three stages: [0] preprocessing, [1] build tree, [2] Nlist for each distinct selector
      * @throws IOException
      * @throws DataFormatException 
      */
@@ -139,12 +149,47 @@ public abstract class RuleLearner {
         times[1] = this.construct_tree(ppcTree);
         
         long start = System.currentTimeMillis();
-        this.selector_nodelists = ppcTree.create_Nlist_for_selectors_arr(this.selector_count);
-        this.selector_nodelist_map = ppcTree.create_selector_Nlist_map(this.selector_nodelists);
-        RuleSearcher.setSelectorNodelists(this.selector_nodelists);
+        this.selector_nlists = ppcTree.create_Nlist_for_selectors_arr(this.selector_count);
+        this.selector_nlist_map = ppcTree.create_selector_Nlist_map(this.selector_nlists);
+        RuleSearcher.setSelectorNlists(this.selector_nlists);
         times[2] = System.currentTimeMillis() - start;
         
         return times;
+    }
+    
+    /**
+     * @param file_name
+     * @return
+     * @throws IOException
+     * @throws DataFormatException
+     */
+    public PPCTree fetch_information_return_PPCtree(String file_name) throws IOException, DataFormatException {
+    	long[] times = new long[3];
+    	
+        this.train_filename = file_name;
+        
+        times[0] = this.preprocessing();
+        
+        PPCTree ppcTree = new PPCTree(); 
+        times[1] = this.construct_tree(ppcTree);
+        
+        long start = System.currentTimeMillis();
+        this.selector_nlists = ppcTree.create_Nlist_for_selectors_arr(this.selector_count);
+        this.selector_nlist_map = ppcTree.create_selector_Nlist_map(this.selector_nlists);
+        RuleSearcher.setSelectorNlists(this.selector_nlists);
+        times[2] = System.currentTimeMillis() - start;
+        
+        return ppcTree;
+    }
+    
+    public void write_nlists(String file_name) throws IOException{
+    	BufferedWriter w = new BufferedWriter(new FileWriter(file_name));
+    	for(INlist nlist : this.selector_nlists){
+    		w.write(nlist.toString());
+    		w.write('\n');
+    	}
+    	w.flush();
+    	w.close();
     }
     
     

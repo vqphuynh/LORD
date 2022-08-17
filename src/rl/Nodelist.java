@@ -6,23 +6,21 @@
 package rl;
 
 /**
- * An array implementation for list of nodes. Each node has three properties: pre-code, pos-code, and support count.
- * </br>The purpose is to reduce memory overhead. 
+ * An array implementation for Nlist. Each node has three properties: pre-code, pos-code, and support count.
+ * </br>The purpose is to reduce memory overhead.
  */
-public class Nodelist {
+public class Nodelist implements INlist {
 	private static final float allocate_rate = 1.75f;
 	private int[][] ppc;
-	private int size;
+	private int size = 0;
 	private int supportCount = -1;
 	
  	public Nodelist(int capacity){
- 		this.size = 0;
 		// ppc[0] for pre-codes, ppc[1] for pos-codes, ppc[2] for support counts
 		this.ppc = new int[3][capacity];
 	}
  	
  	public Nodelist(){
- 		this.size = 0;
 		// ppc[0] for pre-codes, ppc[1] for pos-codes, ppc[2] for support counts
 		this.ppc = new int[3][16];
 	}
@@ -42,6 +40,37 @@ public class Nodelist {
  	}
  	
  	/**
+ 	 * Fill information of the node at position 'index' to the parameter 'node'
+ 	 * @param index
+ 	 * @param node
+ 	 */
+ 	public void get(int index, Node node){
+ 		node.pre = this.ppc[0][index];
+ 		node.pos = this.ppc[1][index];
+ 		node.count = this.ppc[2][index];
+ 	}
+ 	
+ 	/**
+ 	 * Return the sum of support counts of all nodes
+ 	 * @return 
+ 	 */
+ 	public int supportCount(){
+ 		if(this.supportCount == -1){
+ 			int sc = 0;
+ 	 		if(this.ppc != null) for(int count : this.ppc[2]) sc += count;
+ 	 		return (this.supportCount = sc);
+ 		}
+ 		return this.supportCount;
+ 	}
+ 	
+ 	/**
+ 	 * Reset the support count
+ 	 */
+ 	public void resetSC() {
+		this.supportCount = -1;
+	}
+ 	
+ 	/**
  	 * This method is associated with the constructor Nodelist(boolean isEmpty)
  	 * @param capacity
  	 */
@@ -51,6 +80,56 @@ public class Nodelist {
  			// ppc[0] for pre-codes, ppc[1] for pos-codes, ppc[2] for support counts
  			this.ppc = new int[3][capacity];
  		}
+ 	}
+ 	
+ 	/**
+ 	 * This function should only be used when being sure that there will not be any new nodes added.
+ 	 * @param efficient_rate: if the size < capacity*efficient_rate, the shrink will be done.
+ 	 */
+ 	public Nodelist shrink(float efficient_rate){
+ 		if(this.size < this.ppc[0].length*efficient_rate){
+ 			// Too much waste room, shrink
+ 			int[][] new_space = new int[3][size];
+ 			// Copy
+ 			System.arraycopy(this.ppc[0], 0, new_space[0], 0, size);
+ 			System.arraycopy(this.ppc[1], 0, new_space[1], 0, size);
+ 			System.arraycopy(this.ppc[2], 0, new_space[2], 0, size);
+ 			this.ppc = new_space;
+ 		}
+ 		
+ 		return this;
+ 	}
+ 	
+ 	/**
+ 	 * This function should only be used when being sure that there will not be any new nodes added.
+ 	 * </br> Shrink the capacity to the size.
+ 	 */
+ 	public Nodelist shrink(){
+		int[][] new_space = new int[3][size];
+		// Copy
+		System.arraycopy(this.ppc[0], 0, new_space[0], 0, size);
+		System.arraycopy(this.ppc[1], 0, new_space[1], 0, size);
+		System.arraycopy(this.ppc[2], 0, new_space[2], 0, size);
+		this.ppc = new_space;
+		
+		return this;
+ 	}
+ 	
+ 	/**
+ 	 * Return the string representation of the Nlist, just for testing
+ 	 */
+ 	public String toString(){
+ 		StringBuilder sb = new StringBuilder(200);
+ 		sb.append('{');
+ 		for(int i=0; i<size; i++){
+ 			sb.append('<').append(this.ppc[0][i]).append(',')
+ 			.append(this.ppc[1][i]).append(">:")
+ 			.append(this.ppc[2][i]).append("; ");
+ 		}
+ 		if (size > 0) sb.setLength(sb.length()-2);	// not an empty list
+ 		sb.append("} sc:").append(this.supportCount());
+ 		
+ 		return sb.toString();
  	}
  	
  	/**
@@ -102,17 +181,6 @@ public class Nodelist {
  	}
  	
  	/**
- 	 * Fill information of the node at position 'index' to the parameter 'node'
- 	 * @param index
- 	 * @param node
- 	 */
- 	public void get(int index, Node node){
- 		node.pre = this.ppc[0][index];
- 		node.pos = this.ppc[1][index];
- 		node.count = this.ppc[2][index];
- 	}
- 	
- 	/**
  	 * Add the 'supportCount' to the support count of node at the position 'index'
  	 * @param index
  	 * @param supportCount
@@ -120,67 +188,20 @@ public class Nodelist {
  	public void accSupportCount(int index, int supportCount){
  		this.ppc[2][index] += supportCount;
  	}
- 	
+
  	/**
- 	 * Summarize all support counts of nodes then return the sum
- 	 * @return 
+ 	 * Nodelist does not support this method.
  	 */
- 	public int supportCount(){
- 		if(this.supportCount == -1){
- 			int supportCount=0;
- 	 		if(this.ppc != null) for(int count : this.ppc[2]) supportCount += count;
- 	 		return (this.supportCount = supportCount);
- 		}
- 		return this.supportCount;
- 	}
- 	
- 	/**
- 	 * This function should only be used when being sure that there will not be any new nodes added.
- 	 * @param efficient_rate: if the size < capacity*efficient_rate, the shrink will be done.
- 	 */
- 	public Nodelist shrink(float efficient_rate){
- 		if(this.size < this.ppc[0].length*efficient_rate){
- 			// Too much waste room, shrink
- 			int[][] new_space = new int[3][size];
- 			// Copy
- 			System.arraycopy(this.ppc[0], 0, new_space[0], 0, size);
- 			System.arraycopy(this.ppc[1], 0, new_space[1], 0, size);
- 			System.arraycopy(this.ppc[2], 0, new_space[2], 0, size);
- 			this.ppc = new_space;
- 		}
- 		
- 		return this;
- 	}
- 	
- 	/**
- 	 * This function should only be used when being sure that there will not be any new nodes added.
- 	 * </br> Shrink the capacity to the size.
- 	 */
- 	public Nodelist shrink(){
-		int[][] new_space = new int[3][size];
-		// Copy
-		System.arraycopy(this.ppc[0], 0, new_space[0], 0, size);
-		System.arraycopy(this.ppc[1], 0, new_space[1], 0, size);
-		System.arraycopy(this.ppc[2], 0, new_space[2], 0, size);
-		this.ppc = new_space;
-		
-		return this;
- 	}
- 	
- 	/**
- 	 * Return the string representation of the Nlist, just for testing
- 	 */
- 	public String toString(){
- 		StringBuilder sb = new StringBuilder(200);
- 		sb.append('{');
- 		for(int i=0; i<size; i++){
- 			sb.append('<').append(this.ppc[0][i]).append(',')
- 			.append(this.ppc[1][i]).append(">:")
- 			.append(this.ppc[2][i]).append("; ");
- 		}
- 		if (size > 0) sb.setLength(sb.length()-2);	// not an empty list
- 		sb.append("} sc:").append(supportCount());
- 		
- 		return sb.toString();
- 	}
+	public void add(PPCNode ppcNode) {
+		System.err.println("add(PPCNode ppcNode) method is not supported by Nodelist");
+ 		System.exit(0);
+	}
+
+	/**
+	 * Nodelist does not support this method.
+	 */
+	public void insert(PPCNode ppcNode) {
+		System.err.println("insert(PPCNode ppcNode) method is not supported by Nodelist");
+ 		System.exit(0);
+	}
 }

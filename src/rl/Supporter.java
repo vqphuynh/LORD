@@ -52,29 +52,29 @@ public class Supporter {
     }
      
     /**
-     * Calculate the Nlist of itemsets common|i1|i2 from two Nlists of 2 itemsets common|i1, common|i2. (i1 < i2, common can be empty)
+     * Calculate the nlist (Nodelist object) of itemsets common|i1|i2 from two Nlists of 2 itemsets common|i1, common|i2. (i1 < i2, common can be empty)
      * </br>Or calculate the Nlist of itemset [itemset][item], e.g. abcde, from 2 Nlists of itemset abcd and item e, assume that a < b < c < d < e
-     * </br> <b>Note: not commutative</b> between nodelist1 and nodelist2
-     * @param nodelist1 of itemset common|i1 or [itemset]
-     * @param nodelist2 of itemset common|i2 or [item]
-     * @return the nodelist of itemset common|i1|i2 or [itemset][item]
+     * </br> <b>Note: NOT commutative</b> between nlist1 and nlist2
+     * @param nlist1 of itemset common|i1 or [itemset]
+     * @param nlist2 of itemset common|i2 or [item]
+     * @return the nlist of itemset common|i1|i2 or [itemset][item]
      */
-    public static Nodelist create_nlist(Nodelist nodelist1, Nodelist nodelist2){
-    	int size1 = nodelist1.size(), size2 = nodelist2.size();
+    public static INlist create_nlist(INlist nlist1, INlist nlist2){
+    	int size1 = nlist1.size(), size2 = nlist2.size();
     	if(size1 == 0 || size2 == 0) return new NodelistEmpty();
 		
     	int index1=0, index2=0, parent_node_index = -1, parent_node_pre = -1;
     	Nodelist nodelist = new Nodelist(size1);
 		Node i1_node = new Node(), i2_node = new Node();
-		nodelist1.get(index1, i1_node);
-		nodelist2.get(index2, i2_node);
+		nlist1.get(index1, i1_node);
+		nlist2.get(index2, i2_node);
 		
     	while(true){
     		if(i1_node.pre > i2_node.pre){
     			if(i1_node.pos < i2_node.pos){
     				// This desired case says that: i1_node is a descendant of i2_node. 
     				// So i2_node (ancestor) is added to the node list of i1i2 itemset --> increase index1
-    				// NOTE: i2_node can be an ancestor of other nodes in i1_nodelist --> stay index2
+    				// NOTE: i2_node can be an ancestor of other nodes in nlist1 --> stay index2
     				if(parent_node_pre == i2_node.pre){
     					nodelist.accSupportCount(parent_node_index, i1_node.count);
     				}else{
@@ -83,22 +83,22 @@ public class Supporter {
     					parent_node_index++;
     				}
     				index1++;
-    				if(index1 < size1) nodelist1.get(index1, i1_node);
+    				if(index1 < size1) nlist1.get(index1, i1_node);
     				else break;
     			}else{ // i1_node.pre > i2_node.pre && i1_node.pos > i2_node.pos
     				// This undesired case says that: 
-    				// All nodes from i1_node in nodelist1 are NOT descendant of i2_node --> increase index2
-    				// but i1_node can be a descendant of other nodes in nodelist2 --> stay index1
+    				// All nodes from i1_node in nlist1 are NOT descendant of i2_node --> increase index2
+    				// but i1_node can be a descendant of other nodes in nlist2 --> stay index1
     				index2++;
-    				if(index2 < size2) nodelist2.get(index2, i2_node);
+    				if(index2 < size2) nlist2.get(index2, i2_node);
     				else break;
     			}
     		}else{ // i1_node.pre < i2_node.pre --> it must be i1_node.pos < i2_node.pos
     			// This undesired case says that: 
-				// All nodes from i2_node in nodelist2 are not ancestors of i1_node --> increase index1
-				// but i2_node can be a ancestor of other nodes in nodelist1 --> stay index2
+				// All nodes from i2_node in nlist2 are not ancestors of i1_node --> increase index1
+				// but i2_node can be a ancestor of other nodes in nlist1 --> stay index2
     			index1++;
-    			if(index1 < size1) nodelist1.get(index1, i1_node);
+    			if(index1 < size1) nlist1.get(index1, i1_node);
 				else break;
     		}
     	}
@@ -110,20 +110,20 @@ public class Supporter {
     
     /**
      * 'And' operation between two boolean expressions each of which is represented by an Nlist.
-     * </br> The operator is commutative between nodelist1 and nodelist2
-     * @param nodelist1 Nlist of boolean expression 1
-     * @param nodelist2 Nlist of boolean expression 2
-     * @return The representing Nlist of the result 'And' boolean expression
+     * </br> The operator is commutative between nlist1 and nlist2
+     * @param nlist1 Nlist of boolean expression 1
+     * @param nlist2 Nlist of boolean expression 2
+     * @return The Nlist (Nodelist object) of the result 'And' boolean expression
      */
-    public static Nodelist create_nlist_conj(Nodelist nodelist1, Nodelist nodelist2){
-    	int size1 = nodelist1.size(), size2 = nodelist2.size();
+    public static INlist create_nlist_conj(INlist nlist1, INlist nlist2){
+    	int size1 = nlist1.size(), size2 = nlist2.size();
     	if(size1 == 0 || size2 == 0) return new NodelistEmpty();
 		
     	int index1=0, index2=0;
 		Nodelist nodelist = new Nodelist((size2 > size1) ? size2 : size1);
 		Node i1_node = new Node(), i2_node = new Node();
-		nodelist1.get(index1, i1_node);
-		nodelist2.get(index2, i2_node);
+		nlist1.get(index1, i1_node);
+		nlist2.get(index2, i2_node);
 		
 		/*
 		 * Operation principle:
@@ -138,14 +138,14 @@ public class Supporter {
     				// add i1_node to the result nodelist, increase index1, stay index2
     				nodelist.add(i1_node);
     				index1++;
-    				if(index1 < size1) nodelist1.get(index1, i1_node);
+    				if(index1 < size1) nlist1.get(index1, i1_node);
     				else break;
     			}else{
     				// NO ancestor-descendant relationship (i1_node.pre > i2_node.pre && i1_node.pos > i2_node.pos) 
     				// all nodes from i1_node in nodelist1 are NOT descendant of i2_node --> increase index2
     				// but i1_node can be a descendant of other nodes in nodelist2 --> stay index1
     				index2++;
-    				if(index2 < size2) nodelist2.get(index2, i2_node);
+    				if(index2 < size2) nlist2.get(index2, i2_node);
     				else break;
     			}
     		}else if(i1_node.pre < i2_node.pre){
@@ -154,7 +154,7 @@ public class Supporter {
     				// all nodes from i2_node in nodelist2 are NOT descendant of i1_node --> increase index1
     				// but i2_node can be a descendant of other nodes in nodelist1 --> stay index2
     				index1++;
-    				if(index1 < size1) nodelist1.get(index1, i1_node);
+    				if(index1 < size1) nlist1.get(index1, i1_node);
     				else break;
     			}else{
     				// ancestor-descendant relationship (i1_node.pre < i2_node.pre && i1_node.pos > i2_node.pos)
@@ -162,7 +162,7 @@ public class Supporter {
     				// add i2_node to the result nodelist, increase index2, stay index1
     				nodelist.add(i2_node);
     				index2++;
-    				if(index2 < size2) nodelist2.get(index2, i2_node);
+    				if(index2 < size2) nlist2.get(index2, i2_node);
     				else break;
     			}
     		}else{
@@ -170,11 +170,11 @@ public class Supporter {
     			// i1_node.pre == i2_node.pre --> i1_node.pos == i2_node.pos
     			nodelist.add(i1_node);
     			index1++;
-				if(index1 < size1) nodelist1.get(index1, i1_node);
+				if(index1 < size1) nlist1.get(index1, i1_node);
 				else break;
 				
 				index2++;
-				if(index2 < size2) nodelist2.get(index2, i2_node);
+				if(index2 < size2) nlist2.get(index2, i2_node);
 				else break;
     		}
     	}
@@ -187,20 +187,21 @@ public class Supporter {
     
     /**
      * 'Or' operation between two boolean expressions each of which is represented by an Nlist.
-     * </br> The operator is commutative between nodelist1 and nodelist2
-     * @param nodelist1 Nlist of boolean expression 1
-     * @param nodelist2 Nlist of boolean expression 2
-     * @return The representing Nlist of the result 'Or' boolean expression
+     * </br> The operator is commutative between nlist1 and nlist2
+     * @param nlist1 Nlist of boolean expression 1
+     * @param nlist2 Nlist of boolean expression 2
+     * @return The Nlist (Nodelist object) of the result 'Or' boolean expression
      */
-    public static Nodelist create_nlist_disj(Nodelist nodelist1, Nodelist nodelist2){
-    	int size1 = nodelist1.size(), size2 = nodelist2.size();
-    	if(size1 == 0 || size2 == 0) return new NodelistEmpty();
+    public static INlist create_nlist_disj(INlist nlist1, INlist nlist2){
+    	int size1 = nlist1.size(), size2 = nlist2.size();
+    	if (size1 == 0) return nlist2;
+    	if (size2 == 0) return nlist1;
 		
     	int index1=0, index2=0, ancestor_node_pre=-1;
 		Nodelist nodelist = new Nodelist(size1+size2);
 		Node i1_node = new Node(), i2_node = new Node();
-		nodelist1.get(index1, i1_node);
-		nodelist2.get(index2, i2_node);
+		nlist1.get(index1, i1_node);
+		nlist2.get(index2, i2_node);
 		
 		/*
 		 * Operation principle:
@@ -222,7 +223,7 @@ public class Supporter {
     				}
     				
     				index1++;
-    				if(index1 < size1) nodelist1.get(index1, i1_node);
+    				if(index1 < size1) nlist1.get(index1, i1_node);
     				else {
     					index2++;	// ancestor has added
     					break;
@@ -237,7 +238,7 @@ public class Supporter {
     				if(ancestor_node_pre != i2_node.pre) nodelist.add(i2_node);	
     				
     				index2++;
-    				if(index2 < size2) nodelist2.get(index2, i2_node);
+    				if(index2 < size2) nlist2.get(index2, i2_node);
     				else break;
     			}
     		}else if(i1_node.pre < i2_node.pre){
@@ -251,7 +252,7 @@ public class Supporter {
     				if(ancestor_node_pre != i1_node.pre) nodelist.add(i1_node);
     				
     				index1++;
-    				if(index1 < size1) nodelist1.get(index1, i1_node);
+    				if(index1 < size1) nlist1.get(index1, i1_node);
     				else break;
     			}else{
     				// ancestor-descendant relationship (i1_node.pre < i2_node.pre && i1_node.pos > i2_node.pos)
@@ -265,7 +266,7 @@ public class Supporter {
     				}
     				
     				index2++;
-    				if(index2 < size2) nodelist2.get(index2, i2_node);
+    				if(index2 < size2) nlist2.get(index2, i2_node);
     				else{
     					index1++; // ancestor has added
     					break;
@@ -278,10 +279,10 @@ public class Supporter {
     			index1++;
     			index2++;
     			
-				if(index1 < size1) nodelist1.get(index1, i1_node);
+				if(index1 < size1) nlist1.get(index1, i1_node);
 				else break;
 				
-				if(index2 < size2) nodelist2.get(index2, i2_node);
+				if(index2 < size2) nlist2.get(index2, i2_node);
 				else break;
     		}
     	}
@@ -289,7 +290,7 @@ public class Supporter {
     	// add the remaining nodes in one of the two input node lists
     	if(index1 < size1){
     		for(int i=index1; i<size1; i++){
-    			nodelist1.get(i, i1_node);
+    			nlist1.get(i, i1_node);
     			nodelist.add(i1_node);
     		}
     		return nodelist;
@@ -297,7 +298,7 @@ public class Supporter {
     	
     	if(index2 < size2){
     		for(int i=index2; i<size2; i++){
-    			nodelist2.get(i, i2_node);
+    			nlist2.get(i, i2_node);
     			nodelist.add(i2_node);
     		}
 		}
@@ -305,7 +306,6 @@ public class Supporter {
     	nodelist.shrink();	// for memory save
     	
     	return nodelist;
-    	
     }
     
     /**

@@ -28,42 +28,45 @@ import rl.IntHolder;
 import rl.RuleInfo;
 import rl.eg.ExtensiveInfoExporter;
 import rl.eg.Lord;
+import arg.ArgHelperIF;
 import arg.Arguments;
 import arg.LordArgHelper;
 import evaluations.HeuristicMetricFactory.METRIC_TYPES;
+import evaluations.ModelEvaluation;
 
 /**
  * Cross-validation benchmark for multi-thread LORD algorithm
  * </br>If a train data file is in .CSV format, LORD assumes that all attributes are nominal.
  * </br>If a train data file is in .ARFF format, LORD will discrete numerical attributes before learning from the file.
- *
  */
 public class LordRun {
 	// Classification result for folds
-	private static List<Double> hit_counts;
-	private static List<Double> miss_counts;
 	private static List<Long> run_times;
 	private static List<Long> preprocess_times;
 	private static List<Double> rule_counts;
 	private static List<Double> avg_rule_lengths;
+	private static List<Double> recalls;			// not_weighted average recalls w.r.t. classes
+	private static List<Double> precisions;			// not_weighted average precisions w.r.t. classes
+	private static List<Double> macro_f1_scores;	// not_weighted average f1_scores w.r.t classes
+	private static List<Double> accuracies;			// which are also micro f1 scores
 	
-	public static void main(String[] args) throws Exception{
+	public static void main(String[] args) throws Exception {
 		Date date = Calendar.getInstance().getTime();  
         DateFormat dateFormat = new SimpleDateFormat("_yyyy-MM-dd_hh-mm-ss");
         String strDate = dateFormat.format(date);
         
-        LordArgHelper arg_helper = new LordArgHelper();
+        ArgHelperIF arg_helper = new LordArgHelper();
         Arguments arguments = new Arguments();
-        //arguments.input_directory = "data/inputs/german_arff";	// uncomment this line for debugging run
-        arguments.metric_type = METRIC_TYPES.MESTIMATE;		// default
-        arguments.metric_arg = 0.1;							// default
+        //arguments.input_directory = "data/inputs/nursery";	// uncomment this line for debugging run
+        arguments.metric_type = METRIC_TYPES.MESTIMATE;
+        arguments.metric_arg = 0.1;
         
         arguments.parse(args, arg_helper);
         
         if(arguments.output_directory == null && arguments.input_directory != null){
         	Path path = Paths.get(arguments.input_directory);
         	String simple_dir_name = path.getName(path.getNameCount()-1).toString() + strDate;
-        	arguments.output_directory = Paths.get("data/outputs/eg_cv", simple_dir_name).toString();
+        	arguments.output_directory = Paths.get("data/outputs/lord_cv", simple_dir_name).toString();
         }
         
         if(!arg_helper.is_valid(arguments)){
@@ -105,12 +108,14 @@ public class LordRun {
 	    
 	    if(train_files.length != test_files.length) return;
 	    
-	    hit_counts = new ArrayList<Double>(test_files.length);
-	    miss_counts = new ArrayList<Double>(test_files.length);
-	    run_times = new ArrayList<Long>(test_files.length);
 	    preprocess_times = new ArrayList<Long>(test_files.length);
+	    run_times = new ArrayList<Long>(test_files.length);
 	    rule_counts = new ArrayList<Double>(test_files.length);
 	    avg_rule_lengths = new ArrayList<Double>(test_files.length);
+	    recalls = new ArrayList<Double>(test_files.length);
+		precisions = new ArrayList<Double>(test_files.length);
+		macro_f1_scores = new ArrayList<Double>(test_files.length);
+		accuracies = new ArrayList<Double>(test_files.length);
 	    
 	    for(int i=0; i<train_files.length; i++){
 	    	File output_dir = new File(Paths.get(arguments.output_directory, String.format("fold_%02d", i+1)).toString());
@@ -121,37 +126,56 @@ public class LordRun {
 	    			arguments);
 	    }
 	    
-	    double[] avg_results = calculate_average(hit_counts, miss_counts, run_times, preprocess_times, rule_counts, avg_rule_lengths);
+	    double[] avg_results = calculate_average(run_times, 
+	    										preprocess_times,
+	    										rule_counts,
+	    										avg_rule_lengths,
+	    										recalls,
+	    										precisions,
+	    										macro_f1_scores,
+	    										accuracies);
 	    write_avg_results(avg_results, arguments);
 	}
 	
-	private static double[] calculate_average(List<Double> hit_counts,
-												List<Double> miss_counts,
-												List<Long> run_times,
-												List<Long> preprocess_times,
-												List<Double> rule_counts,
-												List<Double> avg_rule_lengths){
-		double[] avg_results = new double[5];
-		double sum_accuracy = 0;
-		long sum_time = 0;
+	private static double[] calculate_average(List<Long> run_times,
+											List<Long> preprocess_times,
+											List<Double> rule_counts,
+											List<Double> avg_rule_lengths,
+											List<Double> recalls,
+											List<Double> precisions,
+											List<Double> macro_f1_scores,
+											List<Double> accuracies){
+		double[] avg_results = new double[8];
+		
 		long sum_preprocess_time = 0;
+		long sum_time = 0;
 		double sum_rule_count = 0;
 		double sum_avg_rule_length = 0;
-		int fold_count = hit_counts.size();
+		double sum_recalls = 0;
+		double sum_precisions = 0;
+		double sum_f1_scores = 0;
+		double sum_accuracy = 0;
 		
+		int fold_count = run_times.size();
 		for(int i=0; i<fold_count; i++){
-			sum_accuracy = sum_accuracy + (hit_counts.get(i)/(hit_counts.get(i)+miss_counts.get(i)));
-			sum_time = sum_time + run_times.get(i);
 			sum_preprocess_time = sum_preprocess_time + preprocess_times.get(i);
+			sum_time = sum_time + run_times.get(i);
 			sum_rule_count = sum_rule_count + rule_counts.get(i);
 			sum_avg_rule_length = sum_avg_rule_length + avg_rule_lengths.get(i);
+			sum_recalls = sum_recalls + recalls.get(i);
+			sum_precisions = sum_precisions + precisions.get(i);
+			sum_f1_scores = sum_f1_scores + macro_f1_scores.get(i);
+			sum_accuracy = sum_accuracy + accuracies.get(i);
 		}
 		
-		avg_results[0] = sum_accuracy/fold_count;
-		avg_results[1] = sum_rule_count/fold_count;
-		avg_results[2] = sum_avg_rule_length/fold_count;
-		avg_results[3] = sum_time/fold_count;
-		avg_results[4] = sum_preprocess_time/fold_count;
+		avg_results[0] = sum_preprocess_time/fold_count;
+		avg_results[1] = sum_time/fold_count;
+		avg_results[2] = sum_rule_count/fold_count;
+		avg_results[3] = sum_avg_rule_length/fold_count;
+		avg_results[4] = sum_recalls/fold_count;
+		avg_results[5] = sum_precisions/fold_count;
+		avg_results[6] = sum_f1_scores/fold_count;
+		avg_results[7] = sum_accuracy/fold_count;
 		
 		return avg_results;
 	}
@@ -159,10 +183,10 @@ public class LordRun {
 	/**
 	 * @param train_filename
 	 * @param test_filename
-	 * @return results[0]=running time, results[1]=rule count, results[2]=accuracy performance
+	 * @param output_dir
+	 * @param arguments
 	 * @throws IOException
-	 * @throws DataFormatException 
-	 * @throws Exception
+	 * @throws DataFormatException
 	 */
 	public static void run(String train_filename,
 							String test_filename,
@@ -172,7 +196,7 @@ public class LordRun {
 		System.setOut(out);
 		
 		Lord alg = new Lord();
-		alg.setThreadCount(arguments.thread_count);
+		alg.setThreadCount(arguments.thread_count, true);
 		
 		System.out.println(String.format("Execute algorithm %s on dataset:\n %s \n %s",
 											alg.getClass().getSimpleName(), train_filename, test_filename));
@@ -186,7 +210,7 @@ public class LordRun {
 		
 		System.out.println(String.format("preprocess time: %d ms", times[0]));
 		System.out.println(String.format("tree building time: %d ms", times[1]));
-		System.out.println(String.format("selector-nodelists generation time: %d ms", times[2]));
+		System.out.println(String.format("selector-nlists generation time: %d ms", times[2]));
 		System.out.println(String.format("Total init time: %d ms", init_time));
 		
 		long learning_time = alg.learning(arguments.metric_type, arguments.metric_arg);
@@ -211,37 +235,46 @@ public class LordRun {
 		String[] value_record;
 		IntHolder predicted_classID = new IntHolder(-1);
 		int[] example_selectorIDs;
-		double hit_count = 0, miss_count = 0;
 		
+		// Predict
+		List<Integer> y_true = new ArrayList<Integer>();
+		List<Integer> y_pred = new ArrayList<Integer>();
 		long start = System.currentTimeMillis();
 		dr.bind_datasource(test_filename);
 		while((value_record = dr.next_record()) != null){
 			example_selectorIDs = alg.predict(value_record, predicted_classID);
-			
-			if(predicted_classID.value == example_selectorIDs[example_selectorIDs.length-1])
-				hit_count++;
-			else{
-				miss_count++;
-				//print_details(example_selectorIDs, alg.classifier.covering_rules, alg.classifier.selected_rule, predicted_classID.value);
-			}
+			y_pred.add(predicted_classID.value);
+			y_true.add(example_selectorIDs[example_selectorIDs.length-1]);
 		}
 		long prediction_time = System.currentTimeMillis() - start;
 		
-		System.out.println("------------------------------------------------------------------------------------");
-		System.out.println(String.format("Prediction time: %d ms", prediction_time));
-		System.out.println(String.format("Hit count: %.0f", hit_count));
-		System.out.println(String.format("Miss count: %.0f", miss_count));
-		System.out.println(String.format("Rule count: %.0f", rule_count));
-		System.out.println(String.format("Average rule length: %f", avg_rule_length));
-		System.out.println(String.format("Accuracy: %f", hit_count/(hit_count+miss_count)));
-		System.out.println(String.format("Total runing time: %d ms", init_time+learning_time+prediction_time));
+		// Calculate performance measurements
+		ModelEvaluation me = new ModelEvaluation();
+		//me.fetch_prediction_result(y_true, y_pred, alg.getClassIDs());
+		me.fetch_prediction_result(y_true, y_pred, null);
+		double[] scores = me.get_not_weighted_f1_score();
 		
-		hit_counts.add(hit_count);
-		miss_counts.add(miss_count);
-		run_times.add(init_time+learning_time+prediction_time);
 		preprocess_times.add(times[0]);
+		run_times.add(init_time+learning_time+prediction_time);
 		rule_counts.add(rule_count);
 		avg_rule_lengths.add(avg_rule_length);
+		recalls.add(scores[ModelEvaluation.recall_idx]);
+		precisions.add(scores[ModelEvaluation.precision_idx]);
+		macro_f1_scores.add(scores[ModelEvaluation.f1_score_idx]);
+		accuracies.add(me.getAccuracy());
+		
+		// Print on each fold
+		System.out.println("------------------------------------------------------------------------------------");
+		System.out.println(String.format("Testing example count: %d", y_true.size()));
+		System.out.println(String.format("Prediction time: %d ms", prediction_time));
+		System.out.println(String.format("Total running time: %d ms", init_time+learning_time+prediction_time));
+		System.out.println(String.format("Rule count: %.0f", rule_count));
+		System.out.println(String.format("Average rule length: %f", avg_rule_length));
+		System.out.println(String.format("Recall: %f", scores[ModelEvaluation.recall_idx]));
+		System.out.println(String.format("Precision: %f", scores[ModelEvaluation.precision_idx]));
+		System.out.println(String.format("Macro f1-score (not weighted): %f", scores[ModelEvaluation.f1_score_idx]));
+		System.out.println(String.format("Accuracy: %f", me.getAccuracy()));
+		
 		
 		//////////////////////Export Extensive Information///////////////////////
 		ExtensiveInfoExporter exporter = new ExtensiveInfoExporter(alg);
@@ -249,37 +282,20 @@ public class LordRun {
 		exporter.export_info(Paths.get(arguments.output_directory, "extensive_info.csv").toString(), test_filename);
 	}
 	
-	static void print_details(int[] example_selectorIDs,
-										List<RuleInfo> candidate_rules,
-										RuleInfo selected_rule,
-										int predicted_classID){
-		System.out.print("Testing example: "); System.out.println(Arrays.toString(example_selectorIDs));
-		if(selected_rule == null){
-			System.out.println("Selected rule: ");
-			System.out.println("Covering rules: ");
-			System.out.print("Predicted class ID (majority): ");System.out.println(predicted_classID);
-			System.out.println();
-		}else{
-			System.out.print("Selected rule: "); System.out.println(selected_rule.content());
-			System.out.println("Covering rules: ");
-			for(RuleInfo rule : candidate_rules){
-				System.out.println(rule.content());
-			}
-			System.out.println();
-		}
-	}
-	
 	static void write_avg_results(double[] avg_results, Arguments arguments) throws IOException{
     	BufferedWriter output = new BufferedWriter(new FileWriter(
     			Paths.get(arguments.output_directory, "cross_validate_results.csv").toString()));
     	
     	StringBuilder sb = new StringBuilder(200);
-    	sb.append("avg_accuracy, avg_rule_count, avg_rule_length, run_time(ms), preprocess_time(ms)\n")
+    	sb.append("preprocess_time(ms), run_time(ms), avg_rule_count, avg_rule_length, avg_recall, avg_precision, avg_macro_f1_score, avg_accuracy\n")
     	.append(avg_results[0])
     	.append(", ").append(avg_results[1])
     	.append(", ").append(avg_results[2])
     	.append(", ").append(avg_results[3])
-    	.append(", ").append(avg_results[4]).append('\n');
+    	.append(", ").append(avg_results[4])
+    	.append(", ").append(avg_results[5])
+    	.append(", ").append(avg_results[6])
+    	.append(", ").append(avg_results[7]).append('\n');
     	output.write(sb.toString());
     	output.flush();
     	output.close();

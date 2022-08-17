@@ -53,7 +53,9 @@ class FilterRuleThread extends Thread{
 			RuleInfo selected_rule = init_rule;
 			
 			for(RuleInfo rule : covering_rules){
-				if(rule.headID == classID && (selected_rule.heuristic_value < rule.heuristic_value || 
+				// Do not need to compare on classes, because we only examine on full covering rules (match the rule head)
+				if(rule.headID == classID && 
+						(selected_rule.heuristic_value < rule.heuristic_value || 
 	    				(selected_rule.heuristic_value == rule.heuristic_value && selected_rule.p < rule.p))){
 					selected_rule = rule;
 				}
