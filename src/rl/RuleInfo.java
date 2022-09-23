@@ -9,7 +9,8 @@ package rl;
 /**
  * Information record of a rule B -> Class
  */
-public class RuleInfo {							
+public class RuleInfo {
+	public double id = -1;
 	public double p = -1;			// p = support(B -> Class)
 	public double n = -1;			// n = support(B -> !Class) = support(B) - p
 	public double n_plus_p = -1;	// n + p = support(B), N = support(!Class), P = support(Class)

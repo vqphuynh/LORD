@@ -578,7 +578,9 @@ public class RuleSearcher {
     	}
     	
     	// Prune rule
-    	while(current_best_rule.body.length > 1){
+    	while(current_best_rule.body.length > 2){
+    		// body length is at least = 3 to do the pruning
+    		// s1|s2 -> c is better than s1 -> c or s2 -> c, checked in the growth phase
     		RuleInfo next_best_rule = get_pruned_current_best_rule(current_best_rule,
 																	arguments,
 																	metric,
@@ -595,6 +597,15 @@ public class RuleSearcher {
     	return current_best_rule;
 	}
 	
+	/**
+	 * With a greedy fashion, find a locally best rule with one phase of rule growth and one phase of rule pruning
+	 * @param selector_nlist_map
+	 * @param body_selector_IDs
+	 * @param class_ID
+	 * @param metric
+	 * @param arguments
+	 * @return
+	 */
 	public static RuleInfo search_for_greedy_best_rule(Map<String, INlist> selector_nlist_map,
 														int[] body_selector_IDs,
 														int class_ID,
@@ -625,7 +636,9 @@ public class RuleSearcher {
     	}
     	
     	// Prune rule
-    	while(current_best_rule.body.length > 1){
+    	while(current_best_rule.body.length > 2){
+    		// body length is at least = 3 to do the pruning
+    		// s1|s2 -> c is better than s1 -> c or s2 -> c, validated in the growth phase
     		RuleInfo next_best_rule = get_pruned_current_best_rule(current_best_rule,
 																	arguments,
 																	metric,
@@ -639,6 +652,158 @@ public class RuleSearcher {
     	    	
     	return current_best_rule;
 	}
+	
+	/**
+	 * With a greedy fashion, find a locally best rule with multi-phases of (rule growth, rule pruning). 
+	 * The rule search stops when the currently best rule cannot be grown and pruned.
+	 * @param selector_nlist_map
+	 * @param body_selector_IDs
+	 * @param class_ID
+	 * @param metric
+	 * @param arguments
+	 * @return
+	 */
+	public static RuleInfo search_for_greedy_best_rule_loop(Map<String, INlist> selector_nlist_map,
+														int[] body_selector_IDs,
+														int class_ID,
+														HeuristicMetric metric,
+														double[] arguments){
+		Map<String, INlist> nlist_db = new HashMap<String, INlist>(selector_nlist_map);
+    	
+    	RuleInfo current_best_rule = new RuleInfo();
+    	current_best_rule.body = new int[0];
+    	current_best_rule.heuristic_value = -Double.MAX_VALUE;
+    	IntHolder chosen_ID = new IntHolder(-1);
+    	
+    	int[] remain_selector_IDs = body_selector_IDs;
+    	
+    	// state=0: can be grown and pruned, 
+    	// state=1: can be either grown or pruned, 
+    	// state=2: cannot be grown and pruned
+    	int state = 0;
+    	
+    	while(true){
+    		// Grow rule
+        	while(true){
+        		RuleInfo next_best_rule = get_extended_current_best_rule(current_best_rule,
+    																	arguments,
+    																	metric,
+    																	nlist_db,
+    																	remain_selector_IDs,
+    																	class_ID,
+    																	chosen_ID);
+        		if(next_best_rule == null){
+        			state++;
+        			break;
+        		}
+        		
+        		remain_selector_IDs = get_remain_IDs(remain_selector_IDs, chosen_ID.value);
+        		current_best_rule = next_best_rule;
+        		state=0;
+        	}
+        	if(state > 1 || current_best_rule.body.length < 3) return current_best_rule;
+        	
+        	// Prune rule
+        	while(true){
+        		RuleInfo next_best_rule = get_pruned_current_best_rule(current_best_rule,
+    																	arguments,
+    																	metric,
+    																	nlist_db,
+    																	class_ID,
+    																	chosen_ID);
+        		if(next_best_rule == null) {
+        			state++;
+        			break;
+        		}
+        		
+        		current_best_rule = next_best_rule;
+        		state=0;
+        	}   	
+        	if(state > 1) return current_best_rule;
+    	}
+	}
+	
+	/**
+	 * The same as function 'search_for_greedy_best_rule_loop', but it counts the number iterations via
+	 * property 'id' of the returned RuleInfo. </br>
+	 * Note: this function is only used for doing experiments to count the total numbers of rule growth-pruning.
+	 * @param selector_nlist_map
+	 * @param body_selector_IDs
+	 * @param class_ID
+	 * @param metric
+	 * @param arguments
+	 * @return
+	 */
+	public static RuleInfo search_for_greedy_best_rule_loop_ci(Map<String, INlist> selector_nlist_map,
+															int[] body_selector_IDs,
+															int class_ID,
+															HeuristicMetric metric,
+															double[] arguments){
+		Map<String, INlist> nlist_db = new HashMap<String, INlist>(selector_nlist_map);
+    	
+    	RuleInfo current_best_rule = new RuleInfo();
+    	current_best_rule.body = new int[0];
+    	current_best_rule.heuristic_value = -Double.MAX_VALUE;
+    	IntHolder chosen_ID = new IntHolder(-1);
+    	
+    	int[] remain_selector_IDs = body_selector_IDs;
+    	
+    	// state=0: can be grown and pruned, 
+    	// state=1: can be either grown or pruned, 
+    	// state=2: cannot be grown and pruned
+    	int state = 0; 
+    	int n_iteration = 0;
+    	
+    	while(true){
+    		n_iteration++;
+    		
+    		// Grow rule
+        	while(true){
+        		RuleInfo next_best_rule = get_extended_current_best_rule(current_best_rule,
+    																	arguments,
+    																	metric,
+    																	nlist_db,
+    																	remain_selector_IDs,
+    																	class_ID,
+    																	chosen_ID);
+        		if(next_best_rule == null){
+        			state++;
+        			break;
+        		}
+        		
+        		remain_selector_IDs = get_remain_IDs(remain_selector_IDs, chosen_ID.value);
+        		current_best_rule = next_best_rule;
+        		state=0;
+        	}
+
+        	if(state > 1 || current_best_rule.body.length < 3){
+        		current_best_rule.id = n_iteration; // borrow the property 'id' to track the number of iterations passed
+        		return current_best_rule;
+        	}
+        	
+        	// Prune rule
+        	while(true){
+        		RuleInfo next_best_rule = get_pruned_current_best_rule(current_best_rule,
+    																	arguments,
+    																	metric,
+    																	nlist_db,
+    																	class_ID,
+    																	chosen_ID);
+        		if(next_best_rule == null) {
+        			state++;
+        			break;
+        		}
+        		
+        		current_best_rule = next_best_rule;
+        		state=0;
+        	}
+        	
+        	if(state > 1){
+        		current_best_rule.id = n_iteration; // borrow the property 'id' to track the number of iterations passed
+        		return current_best_rule;
+        	}
+    	}
+	}
 
 	/**
      * Extend the current best rule with each selector ID of "remain_selector_IDs"
@@ -649,7 +814,7 @@ public class RuleSearcher {
      * @param class_ID
      * @param chosen_ID output parameter, the best selector ID to extend the current best rule
      * @return the next best rule with the chosen selector ID, 
-     * null returned if not found a selector ID so that the heuristic value increases
+     * null returned if not found a selector ID so that the current rule is improved
      */
     private static RuleInfo get_extended_current_best_rule(RuleInfo current_best_rule,
 					    									double[] arguments,

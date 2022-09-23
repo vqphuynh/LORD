@@ -22,7 +22,7 @@ import evaluations.HeuristicMetricFactory;
 import evaluations.ModelEvaluation;
 
 /**
- * Cross-validation benchmark for WLord which an implementation of LORD algorithm to interface with WEKA
+ * Cross-validation benchmark for WLord which is an implementation of LORD algorithm to interface with WEKA
  *
  */
 public class WLordRun {
