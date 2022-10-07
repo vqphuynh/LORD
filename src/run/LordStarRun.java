@@ -281,12 +281,6 @@ public class LordStarRun {
 		System.out.println(String.format("Precision: %f", scores[ModelEvaluation.precision_idx]));
 		System.out.println(String.format("Macro f1-score (not weighted): %f", scores[ModelEvaluation.f1_score_idx]));
 		System.out.println(String.format("Accuracy: %f", me.getAccuracy()));
-		
-		
-		//////////////////////Export Extensive Information///////////////////////
-		//ExtensiveInfoExporter exporter = new ExtensiveInfoExporter(alg);
-		//exporter.export_info(Paths.get(arguments.output_directory, "extensive_info.csv").toString());
-		//exporter.export_info(Paths.get(arguments.output_directory, "extensive_info.csv").toString(), test_filename);
 	}
 	
 	static void write_avg_results(double[] avg_results, Arguments arguments) throws IOException{

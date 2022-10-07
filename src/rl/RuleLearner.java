@@ -48,7 +48,7 @@ public abstract class RuleLearner {
 	/**
 	 * List of attributes
 	 */
-	protected List<Attribute> attributes;
+	protected List<Attribute> attributes;	// attribute id = its index in the attribute list
 	
 	/**
 	 * List of atom selectors (flatten list)
@@ -60,7 +60,7 @@ public abstract class RuleLearner {
 	 * </br>1. FREQUENT ATOM selectors from predict attributes
 	 * </br>2. FREQUENT ATOM selectors from target attributes which are in ascending order of support count
 	 */
-	protected List<Selector> constructing_selectors;
+	protected List<Selector> constructing_selectors;	// selector id = its index in the selector list
 	
 	/**
 	 * Nlists of selectors in <b>constructing_selectors</b>
