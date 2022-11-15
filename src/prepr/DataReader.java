@@ -196,8 +196,8 @@ public abstract class DataReader {
 		Collections.sort(target_selectors, new IncreaseFreqComparator());
 		
 		/**
-		 * 1.3. 'constructing_selectors' = FREQUENT selectors of ('predict_selectors' + 'target_selectors')
-		 * 1.4. 'atom_selectors' = 'predict_selectors' + 'target_selectors'
+		 * 1.3. 'constructing_selectors' = FREQUENT selectors in 'predict_selectors' + all selectors in 'target_selectors'
+		 * 1.4. 'selectors' = 'predict_selectors' + 'target_selectors'
 		 */
 		this.atom_selectors = new ArrayList<Selector>(predict_selectors.size()+target_selectors.size());
 		this.constructing_selectors = new ArrayList<Selector>(predict_selectors.size()+target_selectors.size());
@@ -211,7 +211,6 @@ public abstract class DataReader {
 		
 		for(Selector sel : target_selectors){
 			this.atom_selectors.add(sel);
-			if(sel.frequency < min_sup_count) continue;
 			this.constructing_selectors.add(sel);
 		}
 		
@@ -323,7 +322,7 @@ public abstract class DataReader {
 		predict_selector_count = predict_selectors.size();
 		
 		/**
-		 * 3.2 Construct list 'target_selectors' of FREQUENT ATOM selectors from TARGET attributes
+		 * 3.2 Construct list 'target_selectors' of ATOM selectors from TARGET attributes
 		 * which are in ASCENDING ORDER of support count
 		 */
 		List<Selector> target_selectors = new ArrayList<Selector>();
@@ -337,9 +336,6 @@ public abstract class DataReader {
 				// With a distinctValueID --> atom selector --> selectorList --> selectorIDs
 				// selectorList of atom selector of target attributes must be also not null
 				sel.selectorList = new ArrayList<Selector>(1);
-				
-				// Add frequent selectors only
-				if(sel.frequency < min_sup_count) continue;
 				target_selectors.add(sel);
 				sel.selectorList.add(sel);
 			}

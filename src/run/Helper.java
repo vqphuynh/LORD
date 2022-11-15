@@ -16,10 +16,6 @@ public class Helper {
 		System.out.println("\tjava -cp ./lord.jar run.DiscretizationRun");
 		System.out.println();
 		
-		System.out.println("To run JRIP rule learning, use the following command for help");
-		System.out.println("\tjava -cp ./lord.jar run.JRIP");
-		System.out.println();
-		
 		System.out.println("To run LORD, use the following command for help");
 		System.out.println("\tjava -cp ./lord.jar run.LordRun");
 		System.out.println();

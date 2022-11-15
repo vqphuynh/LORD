@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * PPCTree (PrePost Code tree) for generating Nlist of itemset or selector set.
+ * PPCTree (PrePost Code tree) for generating Nlist of items or selectors.
  */
 public class PPCTree {
 	private PPCNode root;
