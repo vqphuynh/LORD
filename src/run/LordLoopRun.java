@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.zip.DataFormatException;
 
 import prepr.DataReader;
+import prepr.Selector;
 import rl.IntHolder;
 import rl.RuleInfo;
 import rl.eg.LordLoop;
@@ -220,8 +221,10 @@ public class LordLoopRun {
 		System.out.println("------------------------------------------------------------------------------------");
 		System.out.println("Rule set: ");
 		int count = 0;
+		List<Selector> selectors = alg.getConstructingSelectors();
 		for(RuleInfo rule :  alg.rm.ruleList){
-			System.out.println(rule.content());
+			//System.out.println(rule.content());			// for selectorID-based description of rules
+			System.out.println(rule.content(selectors));	// for full description of rules
 			if(count > 100){
 				System.out.println("...");
 				break;

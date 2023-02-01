@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.zip.DataFormatException;
 
 import prepr.DataReader;
+import prepr.Selector;
 import rl.IntHolder;
 import rl.RuleInfo;
 import rl.eg.Lord;
@@ -221,8 +222,10 @@ public class LordRun {
 		System.out.println("Rule set: ");
 		
 		rule_count = alg.rm.ruleList.size();
+		List<Selector> selectors = alg.getConstructingSelectors();
 		for(RuleInfo rule :  alg.rm.ruleList){
-			System.out.println(rule.content());
+			//System.out.println(rule.content());			// for selectorID-based description of rules
+			System.out.println(rule.content(selectors));	// for full description of rules
 			avg_rule_length += rule.body.length;
 		}
 		avg_rule_length = avg_rule_length/rule_count;

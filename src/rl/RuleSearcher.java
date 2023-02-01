@@ -193,13 +193,14 @@ public class RuleSearcher {
 	 * Search for the global best rule based on brute-force search with an auto-pruning technique:
 	 * </br>-P1: False Positive 'n' of the current best rule = 0, its True Positive 'p' can be used as a
 	 * min_sup threshold to prune.
+	 * </br>-init_rule is applied for the current best rule for the brute-force search.
 	 * @param body_selector_IDs
 	 * @param class_IDs
 	 * @param constructing_selectors
 	 * @param prev_level_selector_nlist
 	 * @param metric
 	 * @param arguments
-	 * @param init_rule
+	 * @param init_rule can be null if no initial rule, the initial rule can be found by a greedy search
 	 * @return
 	 */
 	public static RuleInfo search_for_global_best_rule(List<Integer> body_selector_IDs,
@@ -239,21 +240,136 @@ public class RuleSearcher {
 	}
 	
 	/**
-	 * Search for the global best rule based on brute-force search with an auto-pruning technique:
-	 * </br>-P1: False Positive 'n' of the current best rule = 0, its True Positive 'p' can be used as a
-	 * min_sup threshold to prune.
-	 * </br>-P2: The found best rules of the previous testing examples are cached for the following testing examples.
-	 * If no cached best rule is found for a following testing example, the greedy approach (with reduce phase) is
-	 * applied for an init rule 'init_rule' so that the pruning by P1 can be applied sooner in the brute-force search.
-	 * </br>-P3: The reason that the rules are not as long as the number of attributes of the data set.
-	 * a maximum rule length 'max_rule_len' can be applied to the best rule. max_rule_len = init_rule.length + k, e.g k = 1
+	 * @param current_body
 	 * @param body_selector_IDs
 	 * @param class_IDs
 	 * @param constructing_selectors
 	 * @param prev_level_selector_nlist
 	 * @param metric
 	 * @param arguments
-	 * @param init_rule
+	 * @param current_best_rule
+	 * @param rule_tracer
+	 */
+	private static void recursive_search_for_best_rule(int[] current_body,
+														List<Integer> body_selector_IDs,
+														List<Integer> class_IDs,
+														List<Selector> constructing_selectors,
+														Map<String, INlist> prev_level_selector_nlist,
+														HeuristicMetric metric,
+														double[] arguments,
+														RuleInfo current_best_rule,
+														List<RuleInfo> rule_tracer){
+		int size1 = body_selector_IDs.size();
+		int size2 = class_IDs.size();
+		List<Integer> next_body_selector_IDs = new ArrayList<Integer>(size1);
+		List<Integer> next_class_IDs = new ArrayList<Integer>(size2);
+		List<int[]> extended_bodies = new ArrayList<int[]>(size1);
+		Map<String, INlist> curr_level_selector_nlist = new HashMap<String, INlist>(size1+size2);
+		
+		int[] other_body = current_body.clone();
+		int curr_body_last_index = other_body.length-1;
+		
+		int[] extended_pattern = new int[current_body.length+1];
+		System.arraycopy(current_body, 0, extended_pattern, 0, current_body.length);
+		int ext_pattern_last_index = other_body.length;
+		
+    	INlist nlist1 = prev_level_selector_nlist.get(Arrays.toString(current_body));
+    	INlist nlist2, result_nlist;
+    	
+    	/*
+    	 * Extend with candidate selector IDs from 'body_selector_IDs' (body only)
+    	 */
+    	for(int id : body_selector_IDs){
+    		if(id <= current_body[curr_body_last_index]) continue;
+    		
+    		other_body[curr_body_last_index] = id;
+    		
+    		// if((nodelist2 = prev_level_selector_nodelist.get(Arrays.toString(other_body))) == null) continue;
+    		nlist2 = prev_level_selector_nlist.get(Arrays.toString(other_body));
+    		
+    		// Calculate the nodelist and support count for the extended selector set
+    		result_nlist = Supporter.create_nlist(nlist1, nlist2);
+    		
+    		// current_best_rule.n = 0 means 
+    		// the sup_count of the current best rule is used as a min_sup_count to prune.
+    		if(current_best_rule.n == 0 && result_nlist.supportCount() < current_best_rule.p) continue;
+    		
+    		// Otherwise
+    		extended_pattern[ext_pattern_last_index] = id;
+    		extended_bodies.add(extended_pattern.clone());	// be careful, must be a copy
+    		next_body_selector_IDs.add(id);
+			curr_level_selector_nlist.put(Arrays.toString(extended_pattern), result_nlist);
+    	}
+    	
+    	/*
+    	 * Extend with candidate selector IDs from 'class_IDs' (finding new rules)
+    	 */
+    	arguments[0] = nlist1.supportCount(); 		// n+p
+    	for(int class_id : class_IDs){
+    		other_body[curr_body_last_index] = class_id;
+    		
+    		// if((nodelist2 = prev_level_selector_nodelist.get(Arrays.toString(other_body))) == null) continue;
+    		nlist2 = prev_level_selector_nlist.get(Arrays.toString(other_body));
+    		
+    		// Calculate the nodelist and support count for the rule
+    		result_nlist = Supporter.create_nlist(nlist1, nlist2);
+    		arguments[1] = result_nlist.supportCount();	// p, support count of the rule
+    		arguments[2] = arguments[0] - arguments[1];		// n
+    		arguments[4] = constructing_selectors.get(class_id).frequency;	// P
+    		arguments[5] = arguments[3] - arguments[4];		// N
+    		
+    		// current_best_rule.n = 0 means 
+    		// the sup_count of the current best rule is used as a min_sup_count to prune.
+    		if(current_best_rule.n == 0 && arguments[1] < current_best_rule.p) continue;
+    		
+    		double heuristic_value = metric.evaluate(arguments);
+    		
+    		extended_pattern[ext_pattern_last_index] = class_id;
+    		next_class_IDs.add(class_id);
+    		curr_level_selector_nlist.put(Arrays.toString(extended_pattern), result_nlist);
+    		
+    		if ((current_best_rule.heuristic_value < heuristic_value) ||
+        		(current_best_rule.heuristic_value == heuristic_value && current_best_rule.p < arguments[1])){
+    			// Note: rule_tracer is just only for checking, not necessary in benchmark
+    			// or when list all best rules (the same heuristic value and rule support count)
+//    			RuleInfo new_rule = new RuleInfo(arguments[2], arguments[1], arguments[0], current_body.clone(), class_id, heuristic_value);
+//    			rule_tracer.add(new_rule);
+//    			current_best_rule.update_info_from(new_rule);
+    			current_best_rule.update_info_from(arguments[2], arguments[1], arguments[0], current_body.clone(), class_id, heuristic_value);
+        	}
+    	}
+    	
+    	// Checking
+    	if(next_class_IDs.size() == 0 || extended_bodies.size() == 0) return;
+    	
+    	// Recursive extending
+    	for(int[] ext_body : extended_bodies){
+    		recursive_search_for_best_rule(ext_body,
+						    				next_body_selector_IDs,
+						    				next_class_IDs,
+						    				constructing_selectors,
+						    				curr_level_selector_nlist,
+											metric,
+											arguments,
+											current_best_rule,
+											rule_tracer);
+    	}
+	}
+	
+	/**
+	 * Search for the global best rule based on brute-force search with an auto-pruning technique:
+	 * </br>-P1: False Positive 'n' of the current best rule = 0, its True Positive 'p' can be used as a
+	 * min_sup threshold to prune.
+	 * </br>-P2: The reason that the rules are not as long as the number of attributes of the data set.
+	 * a maximum rule length 'max_rule_len' can be applied to the best rule.
+	 * </br>-init_rule is applied for the current best rule for the brute-force search
+	 * @param body_selector_IDs
+	 * @param class_IDs
+	 * @param constructing_selectors
+	 * @param prev_level_selector_nlist
+	 * @param metric
+	 * @param arguments
+	 * @param init_rule can be null if no initial rule, the initial rule can be found by a greedy search
 	 * @param max_rule_len includes the rule head
 	 * @return
 	 */
@@ -294,123 +410,6 @@ public class RuleSearcher {
     	//print_tracing_rules(rule_tracer);
 		
 		return current_best_rule;
-	}
-	
-	/**
-	 * @param current_body
-	 * @param body_selector_IDs
-	 * @param class_IDs
-	 * @param constructing_selectors
-	 * @param prev_level_selector_nlist
-	 * @param metric
-	 * @param arguments
-	 * @param current_best_rule
-	 * @param rule_tracer
-	 */
-	private static void recursive_search_for_best_rule(int[] current_body,
-												List<Integer> body_selector_IDs,
-												List<Integer> class_IDs,
-												List<Selector> constructing_selectors,
-												Map<String, INlist> prev_level_selector_nlist,
-												HeuristicMetric metric,
-												double[] arguments,
-												RuleInfo current_best_rule,
-												List<RuleInfo> rule_tracer){
-		int size1 = body_selector_IDs.size();
-		int size2 = class_IDs.size();
-		List<Integer> next_body_selector_IDs = new ArrayList<Integer>(size1);
-		List<Integer> next_class_IDs = new ArrayList<Integer>(size2);
-		List<int[]> extended_bodies = new ArrayList<int[]>(size1);
-		Map<String, INlist> curr_level_selector_nlist = new HashMap<String, INlist>(size1+size2);
-		
-		int[] other_body = current_body.clone();
-		int curr_body_last_index = other_body.length-1;
-		
-		int[] extended_pattern = new int[current_body.length+1];
-		System.arraycopy(current_body, 0, extended_pattern, 0, current_body.length);
-		int ext_pattern_last_index = other_body.length;
-		
-    	INlist nlist1 = prev_level_selector_nlist.get(Arrays.toString(current_body));
-    	INlist nlist2, result_nlist;
-    	
-    	/*
-    	 * Extend with candidate selector IDs from 'body_selector_IDs' (body only)
-    	 */
-    	for(int id : body_selector_IDs){
-    		if(id <= current_body[curr_body_last_index]) continue;
-    		
-    		other_body[curr_body_last_index] = id;
-    		
-    		// if((nodelist2 = prev_level_selector_nodelist.get(Arrays.toString(other_body))) == null) continue;
-    		nlist2 = prev_level_selector_nlist.get(Arrays.toString(other_body));
-    		
-    		// Calculate the nodelist and support count for the extended selector set
-    		result_nlist = Supporter.create_nlist(nlist1, nlist2);
-    		
-    		// n = 0 means the current best rule already gets highest heuristic value
-    		// at this time, the sup_count of the current best rule is used as a min_sup_count to prune.
-    		if(current_best_rule.n == 0 && result_nlist.supportCount() < current_best_rule.p) continue;
-    		
-    		// Otherwise
-    		extended_pattern[ext_pattern_last_index] = id;
-    		extended_bodies.add(extended_pattern.clone());	// be careful, must be a copy
-    		next_body_selector_IDs.add(id);
-			curr_level_selector_nlist.put(Arrays.toString(extended_pattern), result_nlist);
-    	}
-    	
-    	/*
-    	 * Extend with candidate selector IDs from 'class_IDs' (finding new rules)
-    	 */
-    	arguments[0] = nlist1.supportCount(); 		// n+p
-    	for(int class_id : class_IDs){
-    		other_body[curr_body_last_index] = class_id;
-    		
-    		// if((nodelist2 = prev_level_selector_nodelist.get(Arrays.toString(other_body))) == null) continue;
-    		nlist2 = prev_level_selector_nlist.get(Arrays.toString(other_body));
-    		
-    		// Calculate the nodelist and support count for the rule
-    		result_nlist = Supporter.create_nlist(nlist1, nlist2);
-    		arguments[1] = result_nlist.supportCount();	// p, support count of the rule
-    		arguments[2] = arguments[0] - arguments[1];		// n
-    		arguments[4] = constructing_selectors.get(class_id).frequency;	// P
-    		arguments[5] = arguments[3] - arguments[4];		// N
-    		
-    		// n = 0 means the current best rule already gets highest heuristic value
-    		// at this time, the sup_count of the current best rule is used as a min_sup_count to prune.
-    		if(current_best_rule.n == 0 && arguments[1] < current_best_rule.p) continue;
-    		
-    		double heuristic_value = metric.evaluate(arguments);
-    		
-    		extended_pattern[ext_pattern_last_index] = class_id;
-    		next_class_IDs.add(class_id);
-    		curr_level_selector_nlist.put(Arrays.toString(extended_pattern), result_nlist);
-    		
-    		if ((current_best_rule.heuristic_value < heuristic_value) ||
-        		(current_best_rule.heuristic_value == heuristic_value && current_best_rule.p < arguments[1])){
-    			// Note: rule_tracer is just only for checking, not necessary in benchmark
-    			// or when list all best rules (the same heuristic value and rule support count)
-//    			RuleInfo new_rule = new RuleInfo(arguments[2], arguments[1], arguments[0], current_body.clone(), class_id, heuristic_value);
-//    			rule_tracer.add(new_rule);
-//    			current_best_rule.update_info_from(new_rule);
-    			current_best_rule.update_info_from(arguments[2], arguments[1], arguments[0], current_body.clone(), class_id, heuristic_value);
-        	}
-    	}
-    	
-    	// Checking
-    	if(next_class_IDs.size() == 0 || extended_bodies.size() == 0) return;
-    	
-    	// Recursive extending
-    	for(int[] ext_body : extended_bodies){
-    		recursive_search_for_best_rule(ext_body,
-						    				next_body_selector_IDs,
-						    				next_class_IDs,
-						    				constructing_selectors,
-						    				curr_level_selector_nlist,
-											metric,
-											arguments,
-											current_best_rule,
-											rule_tracer);
-    	}
 	}
 	
 	/**
@@ -468,8 +467,8 @@ public class RuleSearcher {
     		// Calculate the nodelist and support count for the extended selector set
     		result_nlist = Supporter.create_nlist(nlist1, nlist2);
     		
-    		// n = 0 means the current best rule already gets highest heuristic value
-    		// at this time, the sup_count of the current best rule is used as a min_sup_count to prune.
+    		// current_best_rule.n = 0 means 
+    		// the sup_count of the current best rule is used as a min_sup_count to prune.
     		if(current_best_rule.n == 0 && result_nlist.supportCount() < current_best_rule.p) continue;
     		
     		// Otherwise
@@ -496,8 +495,8 @@ public class RuleSearcher {
     		arguments[4] = constructing_selectors.get(class_id).frequency;	// P
     		arguments[5] = arguments[3] - arguments[4];		// N
     		
-    		// n = 0 means the current best rule already gets highest heuristic value
-    		// at this time, the sup_count of the current best rule is used as a min_sup_count to prune.
+    		// current_best_rule.n = 0 means 
+    		// the sup_count of the current best rule is used as a min_sup_count to prune.
     		if(current_best_rule.n == 0 && arguments[1] < current_best_rule.p) continue;
     		
     		double heuristic_value = metric.evaluate(arguments);
@@ -537,6 +536,8 @@ public class RuleSearcher {
 											deep);
     	}
 	}
+	
+	
 	
 	
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

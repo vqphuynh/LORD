@@ -5,12 +5,16 @@
 
 package rl;
 
+import java.util.List;
+
+import prepr.Selector;
+
 
 /**
  * Information record of a rule B -> Class
  */
-public class RuleInfo {
-	public double id = -1;
+public class RuleInfo {	
+	public int id = -1;
 	public double p = -1;			// p = support(B -> Class)
 	public double n = -1;			// n = support(B -> !Class) = support(B) - p
 	public double n_plus_p = -1;	// n + p = support(B), N = support(!Class), P = support(Class)
@@ -66,6 +70,13 @@ public class RuleInfo {
 	}
 	
 	/**
+	 * Return a copied RuleInfo object of the rule
+	 */
+	public RuleInfo clone(){
+		return new RuleInfo(this.n, this.p, this.n_plus_p, this.body, this.headID, this.heuristic_value);
+	}
+	
+	/**
 	 * @return String presentation of the body and the head
 	 */
 	public String signature(){
@@ -76,7 +87,7 @@ public class RuleInfo {
 	}
 	
 	/**
-	 * @return String presentation of the rule with properties
+	 * @return Selector-ID-based string presentation of the rule with properties
 	 */
 	public String content(){
 		StringBuilder sb = new StringBuilder(200);
@@ -86,7 +97,34 @@ public class RuleInfo {
 		sb.append("] -> ").append(this.headID)
 		.append("\t(p=").append(this.p)
 		.append(", n=").append(this.n)
-		.append(", hueristic_value=").append(this.heuristic_value).append(")");
+		.append(", heuristic_value=").append(this.heuristic_value).append(")");
+		return sb.toString();
+	}
+	
+	/**
+	 * @return Selector-condition-based string presentation of the rule with properties
+	 */
+	public String content(List<Selector> selectors){
+		StringBuilder sb = new StringBuilder(200);
+		sb.append("IF ");
+		for(int sel_id : body) sb.append(selectors.get(sel_id).condition).append(" & ");
+		sb.setLength(sb.length()-3);
+		sb.append(" THEN ").append(selectors.get(headID).condition)
+		.append("\t(p=").append(this.p)
+		.append(", n=").append(this.n)
+		.append(", heuristic_value=").append(this.heuristic_value).append(")");
+		return sb.toString();
+	}
+	
+	/**
+	 * @return Selector-condition-based string presentation of the rule
+	 */
+	public String content_without_properties(List<Selector> selectors){
+		StringBuilder sb = new StringBuilder(200);
+		sb.append("IF ");
+		for(int sel_id : body) sb.append(selectors.get(sel_id).condition).append(" & ");
+		sb.setLength(sb.length()-3);
+		sb.append(" THEN ").append(selectors.get(headID).condition);
 		return sb.toString();
 	}
 }
