@@ -82,8 +82,7 @@ public class ARFFReader extends DataReader {
 				}
 				
 				// Nominal attribute case
-				String[] attr_values = item_list[2].substring(item_list[2].indexOf('{')+1, 
-															item_list[2].lastIndexOf('}')).split(COMMA_DELIMITER);
+				String[] attr_values = line.substring(line.indexOf('{')+1, line.lastIndexOf('}')).split(COMMA_DELIMITER);
 				Map<String, Selector> distinct_values = new HashMap<String, Selector>(attr_values.length);
 				for(String v : attr_values){
 					String value = v.trim();
