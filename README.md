@@ -2,6 +2,10 @@
 A Java implementation for LORD, a rule learning algorithm with the approach of searching for a locally optimal rule for each training example.
 The rule searching is completely independent among training examples so LORD inherently can run parallel in shared-memory or distributed environments.
 
+Details of LORD is from the article:
+Huynh, V.Q.P., Fürnkranz, J. & Beck, F. Efficient learning of large sets of locally optimal classification rules. Mach Learn 112, 571–610 (2023). 
+https://doi.org/10.1007/s10994-022-06290-w
+
 
 # Packages
 
