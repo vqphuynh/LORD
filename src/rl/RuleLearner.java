@@ -8,6 +8,7 @@ package rl;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.Map;
 import java.util.zip.DataFormatException;
 
 import prepr.Attribute;
+import prepr.CSVReader;
 import prepr.DataReader;
 import prepr.Selector;
 import evaluations.HeuristicMetricFactory.METRIC_TYPES;
@@ -29,6 +31,7 @@ public abstract class RuleLearner {
     protected int thread_count = Math.max(2, Runtime.getRuntime().availableProcessors()/2);
     
     protected String train_filename = null;	// file name of the training dataset
+    protected InputStream data_stream = null;	// alternative train data input channel
 	
     protected int row_count;				// the number of records in the dataset
     protected int min_sup_count;			// minimum support count
@@ -58,7 +61,7 @@ public abstract class RuleLearner {
 	/**
 	 * <b>constructing_selectors</b> includes (in sequence):
 	 * </br>1. FREQUENT ATOM selectors from predict attributes
-	 * </br>2. FREQUENT ATOM selectors from target attributes which are in ascending order of support count
+	 * </br>2. ATOM selectors from target attributes which are in ascending order of support count
 	 */
 	protected List<Selector> constructing_selectors;	// selector id = its index in the selector list
 	
@@ -81,6 +84,14 @@ public abstract class RuleLearner {
 		return this.constructing_selectors;
 	}
 	
+	public Map<String, INlist> getSelectorNlistMap(){
+		return this.selector_nlist_map;
+	}
+	
+	public INlist[] getSelectorNlist(){
+		return this.selector_nlists;
+	}
+	
 	public int getSelectorCount(){
 		return this.selector_count;
 	}
@@ -99,6 +110,14 @@ public abstract class RuleLearner {
     
     public List<Integer> getClassIDs(){
     	return this.classIDs;
+    }
+    
+    /**
+     * @param id the id (the selector Id)
+     * @return the original value from the input data
+     */
+    public String getValue(int id){
+		return this.constructing_selectors.get(id).distinctValue;
     }
     
     /**
@@ -158,6 +177,31 @@ public abstract class RuleLearner {
     }
     
     /**
+     * Do data preprocessing, build PPCTree and then create Nlist for each distinct selector
+     * @return running time of the three stages: [0] preprocessing, [1] build tree, [2] Nlist for each distinct selector
+     * @throws IOException
+     * @throws DataFormatException 
+     */
+    public long[] fetch_information(InputStream data_stream) throws IOException, DataFormatException {
+    	long[] times = new long[3];
+    	
+        this.data_stream = data_stream;
+        
+        times[0] = this.preprocessing();
+        
+        PPCTree ppcTree = new PPCTree(); 
+        times[1] = this.construct_tree(ppcTree);
+        
+        long start = System.currentTimeMillis();
+        this.selector_nlists = ppcTree.create_Nlist_for_selectors_arr(this.selector_count);
+        this.selector_nlist_map = ppcTree.create_selector_Nlist_map(this.selector_nlists);
+        RuleSearcher.setSelectorNlists(this.selector_nlists);
+        times[2] = System.currentTimeMillis() - start;
+        
+        return times;
+    }
+    
+    /**
      * @param file_name
      * @return
      * @throws IOException
@@ -167,6 +211,31 @@ public abstract class RuleLearner {
     	long[] times = new long[3];
     	
         this.train_filename = file_name;
+        
+        times[0] = this.preprocessing();
+        
+        PPCTree ppcTree = new PPCTree(); 
+        times[1] = this.construct_tree(ppcTree);
+        
+        long start = System.currentTimeMillis();
+        this.selector_nlists = ppcTree.create_Nlist_for_selectors_arr(this.selector_count);
+        this.selector_nlist_map = ppcTree.create_selector_Nlist_map(this.selector_nlists);
+        RuleSearcher.setSelectorNlists(this.selector_nlists);
+        times[2] = System.currentTimeMillis() - start;
+        
+        return ppcTree;
+    }
+    
+    /**
+     * @param data_stream
+     * @return
+     * @throws IOException
+     * @throws DataFormatException
+     */
+    public PPCTree fetch_information_return_PPCtree(InputStream data_stream) throws IOException, DataFormatException {
+    	long[] times = new long[3];
+    	
+        this.data_stream = data_stream;
         
         times[0] = this.preprocessing();
         
@@ -203,13 +272,21 @@ public abstract class RuleLearner {
 	protected long preprocessing() throws IOException, DataFormatException {
     	long start = System.currentTimeMillis();
     	
-    	DataReader dr = DataReader.getDataReader(this.train_filename);
-    	if(dr == null){
-    		System.out.println("Can not recognize the file type.");
+    	DataReader dr = null;
+    	if (this.data_stream != null){
+    		dr = new CSVReader();
+    		dr.fetch_info(this.data_stream, this.target_attr_count, 0.001, false);
+    	}else if (this.train_filename != null){
+    		dr = DataReader.getDataReader(this.train_filename);
+    		if(dr == null){
+        		System.out.println("Can not recognize the file type.");
+        		return 0;
+        	}
+    		dr.fetch_info(this.train_filename, this.target_attr_count, 0.001, false);
+    	}else{
+    		System.out.println("No train data");
     		return 0;
     	}
-    	
-    	dr.fetch_info(this.train_filename, this.target_attr_count, 0.001, false);
 		
 		this.attributes = dr.getAttributes();
 		
@@ -267,17 +344,27 @@ public abstract class RuleLearner {
 	 * @throws DataFormatException 
 	 */
 	protected long construct_tree(PPCTree ppcTree) throws IOException, DataFormatException {
-		long start = System.currentTimeMillis();  
+		long start = System.currentTimeMillis();
+		
+		DataReader dr = null;
+		if(this.train_filename != null){
+			dr = DataReader.getDataReader(this.train_filename);
+			dr.bind_datasource(this.train_filename);
+		}else if (this.data_stream != null){
+			dr = new CSVReader();
+			this.data_stream.reset();	// ByteArrayInputStream can support reset()
+			dr.bind_datasource(this.data_stream);
+		}else{
+    		System.out.println("No train data");
+    		return 0;
+    	}
 		
 		int[][] result = new int[this.row_count][];
-		int index = 0;
-	    
-		DataReader dr = DataReader.getDataReader(this.train_filename);
-		dr.bind_datasource(this.train_filename);
-		
+		int index = 0;		
 		String[] value_record;
 		
-		int[] id_buffer = new int[this.attr_count];
+		//int[] id_buffer = new int[this.attr_count];
+		int[] id_buffer = new int[this.selector_count]; // to support PosNegFeatureRuleLearner
 		int[] id_record;
 		
 		while((value_record = dr.next_record()) != null){
@@ -311,7 +398,7 @@ public abstract class RuleLearner {
 	 * @param record record of values read from data set
 	 * @return record of ids which is selectorID of atom selectors, the length of returned record can be smaller than that of the input record.
 	 */
-	protected int[] convert_values_to_selectorIDs(String[] value_record, int[] id_buffer){
+	public int[] convert_values_to_selectorIDs(String[] value_record, int[] id_buffer){
 		int count=0;
 		Selector s;
 		
@@ -346,4 +433,13 @@ public abstract class RuleLearner {
      * @return the array of selector IDs of 'value_record', and the predicted class id in 'predicted_classID'
      */
     public abstract int[] predict(String[] value_record, IntHolder predicted_classID);
+    
+    
+    /**
+     * Predict class id of a new example 'value_record'
+     * @param value_record a new example without its target class
+     * @param predicted_classID the predicted class ID
+     * @return the array of selector IDs of 'value_record', and the predicted class id in 'predicted_classID'
+     */
+    public abstract int[] predict_noclass(String[] value_record, IntHolder predicted_classID);
 }

@@ -8,6 +8,9 @@ package prepr;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.zip.DataFormatException;
 
@@ -27,9 +30,18 @@ public class CSVReader extends DataReader {
 			throw new DataFormatException("Require CSV format");
 		
 		if(this.input != null) this.input.close();
+		this.input = new BufferedReader(new FileReader(data_filename));
 		
 	    // Skip attribute name row
-    	this.input = new BufferedReader(new FileReader(data_filename));
+    	input.readLine();
+	}
+	
+	@Override
+	public void bind_datasource(InputStream data_stream) throws DataFormatException, IOException {    	
+    	if(this.input != null) this.input.close();
+		this.input = new BufferedReader(new InputStreamReader(data_stream, StandardCharsets.UTF_8));
+		
+	    // Skip attribute name row
     	input.readLine();
 	}
 	
@@ -41,10 +53,26 @@ public class CSVReader extends DataReader {
 		if (this.data_format != DataReader.getDataFormat(data_filename))
 			throw new DataFormatException("Require CSV format");
 		
+		BufferedReader input = new BufferedReader(new FileReader(data_filename));
+		this._fetch_info(input, target_attr_count, support_threshold, internal_dnf);
+	}
+	
+	@Override
+	public void fetch_info(InputStream data_stream, 
+							int target_attr_count,
+							double support_threshold, 
+							boolean internal_dnf) throws DataFormatException, IOException {
+		BufferedReader input = new BufferedReader(new InputStreamReader(data_stream, StandardCharsets.UTF_8));
+		this._fetch_info(input, target_attr_count, support_threshold, internal_dnf);
+	}
+	
+	private void _fetch_info(BufferedReader input,
+							int target_attr_count,
+							double support_threshold,
+							boolean internal_dnf) throws DataFormatException, IOException{		
 		/**
 		 * 1. Parse meta data, get the list of attributes, it treats all attributes as nominal ones
 		 */
-		BufferedReader input = new BufferedReader(new FileReader(data_filename));
 		String line;
 		String[] item_list;
 		int attr_id=-1;

@@ -221,6 +221,21 @@ public class RTree {
 		
 		return covering_rules;
 	}
+	/**
+	 * Find all covering rules in the tree
+	 * @param example an array of selector IDs based on attribute values of an example
+	 * </br> example = [increasingly sorted prediction selector ids] without class
+	 * @return list of the found covering rules
+	 */
+	public List<RuleInfo> find_covering_rules_noclass(int[] example){
+		List<RuleInfo> covering_rules = new ArrayList<RuleInfo>();
+		
+		for(RNode child : root.children){
+			this.find_covering_rules_recursive(child, example, example.length-1, covering_rules);
+		}
+		
+		return covering_rules;
+	}
 	private void find_covering_rules_recursive(RNode node, int[] example, int curr_index, List<RuleInfo> covering_rules){
 		int next_index;
 		for(next_index=curr_index; next_index > -1; next_index--){

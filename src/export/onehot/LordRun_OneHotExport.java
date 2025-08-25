@@ -31,7 +31,7 @@ import arg.Arguments;
 import arg.LordArgHelper;
 import evaluations.HeuristicMetricFactory.METRIC_TYPES;
 import evaluations.ModelEvaluation;
-import export.onehot.LordOneHotExpo;
+import export.onehot.LordOneHotExport;
 
 /**
  * Cross-validation benchmark for multi-thread LORD algorithm. Export one-hot-encoding for examples and rules
@@ -51,7 +51,7 @@ public class LordRun_OneHotExport {
 	
 	public static void main(String[] args) throws Exception {
 		String[] input_directories = new String[]{
-        		"data/inputs/mushroom",
+//        		"data/inputs/mushroom",
 //        		"data/inputs/flo_datasets/5",
 //				"data/inputs/flo_datasets/16",
 //				"data/inputs/flo_datasets/19",
@@ -211,7 +211,7 @@ public class LordRun_OneHotExport {
 		PrintStream out = new PrintStream(new FileOutputStream(Paths.get(output_dir, "eg_output.txt").toString()));
 		System.setOut(out);
 		
-		LordOneHotExpo alg = new LordOneHotExpo();
+		LordOneHotExport alg = new LordOneHotExport();
 		alg.setThreadCount(arguments.thread_count, true);
 		
 		System.out.println(String.format("Execute algorithm %s on dataset:\n %s \n %s",
@@ -289,9 +289,7 @@ public class LordRun_OneHotExport {
 		
 		
 		//////////////////////Export ONE-HOT-ENCODING///////////////////////
-		String example_filepath = Paths.get(output_dir, "examples_onehot.txt").toString();
-		String rule_filepath = Paths.get(output_dir, "rules_onehot.txt").toString();
-		alg.export_onehot(example_filepath, rule_filepath);
+		alg.export_onehot(output_dir);
 	}
 	
 	static void write_avg_results(double[] avg_results, Arguments arguments) throws IOException{

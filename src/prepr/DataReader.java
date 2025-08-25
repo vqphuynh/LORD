@@ -7,6 +7,7 @@ package prepr;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -123,11 +124,31 @@ public abstract class DataReader {
 									boolean internal_dnf) throws DataFormatException, IOException;
 	
 	/**
+	 * @param data_stream
+	 * @param target_attr_count
+	 * @param support_threshold
+	 * @param internal_dnf whether internal Disjunction Normal Form is supported
+	 * @throws DataFormatException, IOException
+	 */
+	public abstract void fetch_info(InputStream data_stream,
+									int target_attr_count,
+									double support_threshold,
+									boolean internal_dnf) throws DataFormatException, IOException;
+	
+	
+	/**
 	 * Open a data source file. Then using 'next_record()' method to fetch data row in form of String[]
 	 * @param data_filename
 	 * @throws DataFormatException, IOException
 	 */
 	public abstract void bind_datasource(String data_filename) throws DataFormatException, IOException;
+	
+	/**
+	 * Open a data source file. Then using 'next_record()' method to fetch data row in form of String[]
+	 * @param data_stream
+	 * @throws DataFormatException, IOException
+	 */
+	public abstract void bind_datasource(InputStream data_stream) throws DataFormatException, IOException;
 	
 	/**
 	 * Support two formats: .csv, .arff

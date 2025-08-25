@@ -6,6 +6,7 @@
 package prepr;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.zip.DataFormatException;
 
@@ -41,10 +42,30 @@ public class InstanceReader extends DataReader {
 	 * Do nothing for this implementation of the abstract function defined by DataReader class
 	 */
 	@Override
+	public void bind_datasource(InputStream data_stream)
+			throws DataFormatException, IOException {
+		
+	}
+	
+	/**
+	 * Do nothing for this implementation of the abstract function defined by DataReader class
+	 */
+	@Override
 	public void fetch_info(String data_filename,
 			int target_attr_count,
 			double support_threshold,
 			boolean disj_supp) throws DataFormatException, IOException{
+		
+	}
+	
+	/**
+	 * Do nothing for this implementation of the abstract function defined by DataReader class
+	 */
+	@Override
+	public void fetch_info(InputStream data_stream, 
+			int target_attr_count,
+			double support_threshold, 
+			boolean internal_dnf) throws DataFormatException, IOException {
 		
 	}
 	

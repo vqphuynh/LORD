@@ -85,16 +85,6 @@ public class Lord extends RuleLearner{
     
     ///////////////////////////////////////////// PREDICTION PHASE //////////////////////////////////////////////
     public int[] predict(String[] value_record, IntHolder predicted_classID){
-    	return predict_byLORD(value_record, predicted_classID);
-    }
-    
-    /**
-     * Native prediction method of LORD
-     * @param value_record
-     * @param predicted_classID
-     * @return
-     */
-    private int[] predict_byLORD(String[] value_record, IntHolder predicted_classID){
     	int[] id_buffer = new int[this.attr_count];
 		int[] example;
 		
@@ -123,6 +113,37 @@ public class Lord extends RuleLearner{
 		
 		return example;
     }
+    
+    @Override
+	public int[] predict_noclass(String[] value_record, IntHolder predicted_classID) {
+    	int[] id_buffer = new int[this.attr_count];
+		int[] example;
+		
+    	// convert value_record to a record of selectorIDs
+		example = this.convert_values_to_selectorIDs(value_record, id_buffer);
+		
+		if(example.length < 2) {
+			// the new example is without body, just its class
+			predicted_classID.value = this.rm.defaultClassID;
+			
+			// To print prediction details
+			this.rm.selected_rule = null;
+			this.rm.covering_rules = new ArrayList<RuleInfo>();
+			
+			return example;
+		}
+		
+		Arrays.sort(example);
+		RuleInfo best_rule = this.rm.get_best_covering_rule_noclass(example); // covering rules stored in rm.covering_rules
+		if(best_rule != null){
+			predicted_classID.value = best_rule.headID;
+			return example;
+		}
+		
+		predicted_classID.value = this.rm.defaultClassID;
+		
+		return example;
+	}
     
     /**
      * Prediction method of CMAR based on Weighted Chi-Square.

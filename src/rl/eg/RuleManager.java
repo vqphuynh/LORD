@@ -27,11 +27,27 @@ public class RuleManager {
 	/**
 	 * Find the best covering rule.
 	 * </br> All the covering rules (for just this example) are stored in 'covering_rules' property.
-	 * @param example
+	 * @param example with its target class at the last position
 	 * @return the best covering rule
 	 */
 	public RuleInfo get_best_covering_rule(int[] example){
 		this.covering_rules = this.ruleTree.find_covering_rules(example);
+		
+		if(covering_rules.size()==0){
+			return (selected_rule = null);
+		}
+		
+		return (selected_rule = RuleComparator.select_best_rule(this.covering_rules));
+	}
+	
+	/**
+	 * Find the best covering rule.
+	 * </br> All the covering rules (for just this example) are stored in 'covering_rules' property.
+	 * @param example without its target class
+	 * @return the best covering rule
+	 */
+	public RuleInfo get_best_covering_rule_noclass(int[] example){
+		this.covering_rules = this.ruleTree.find_covering_rules_noclass(example);
 		
 		if(covering_rules.size()==0){
 			return (selected_rule = null);
