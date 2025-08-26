@@ -134,14 +134,24 @@ public class LordOneHotExport extends Lord {
 	}
 	
 	
+	private void feed_true_class(String[] y_test){
+		Attribute class_attr = this.attributes.get(this.attr_count-1); // class attribute at the last position
+		int last_pos = this.test_examples.get(0).length-1;
+		int idx = 0;
+		for(int[] test_example : this.test_examples){
+			test_example[last_pos] = class_attr.getSelector(y_test[idx]).distinctValueID;
+			idx ++;
+		}
+	}
+	
+	
 	/**
 	 * EXPORT ONE-HOT FOR TRAINING EXAMPLES AND RULES
-	 * @param train_filepath
-	 * @param test_filepath
-	 * @param rule_filepath
+	 * @param dir_path
+	 * @param y_test
 	 * @throws IOException 
 	 */
-	public void export_onehot(String dir_path) throws IOException{
+	public void export_onehot(String dir_path, String[] y_test) throws IOException{
 		
 		// Prepare a list of One-Hot-Encoding supporting Selectors.
 		// The distinct value Id of a SelectorOneHot is its position in the list
@@ -199,6 +209,10 @@ public class LordOneHotExport extends Lord {
 		fw = new FileWriter(Paths.get(dir_path, "test_onehot.txt").toString());
 		writer = new BufferedWriter(fw);
 		sb = new StringBuffer(1024*8);
+		
+		if (y_test != null){
+			this.feed_true_class(y_test);
+		}
 		
 		for (int[] id_record : this.test_examples){
 			int[] onehot_record = new int[this.distinct_value_count];

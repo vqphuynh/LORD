@@ -289,7 +289,7 @@ public class LordRun_OneHotExport {
 		
 		
 		//////////////////////Export ONE-HOT-ENCODING///////////////////////
-		alg.export_onehot(output_dir);
+		alg.export_onehot(output_dir, null);
 	}
 	
 	static void write_avg_results(double[] avg_results, Arguments arguments) throws IOException{
