@@ -15,12 +15,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.DataFormatException;
 
-import rl.IntHolder;
-import discretizer.Discretizer;
-import discretizer.Discretizer.DISCRETIZER;
-import discretizer.FUSINTERDiscretizer;
-import discretizer.MDLPDiscretizer;
-
 /**
  * Numeric attributes will be discretized automatically by methods: Fusinter or MDLP
  * </br> MDLP takes more time than Fusinter does but it can be parallelized
@@ -32,11 +26,13 @@ public class ARFFReader extends DataReader {
 	private static final String DATA = "@DATA";
 	private static final String NUMERIC = "NUMERIC";
 	
-//	private DISCRETIZER discret_method = DISCRETIZER.MDLP;
-	private DISCRETIZER discret_method = DISCRETIZER.FUSINTER;
-	
 	public ARFFReader(){
 		this.data_format = DATA_FORMATS.ARFF;
+	}
+	
+	@Override
+	public void set_attribute_datatypes(String[] datatypes) {
+		// Do nothing		
 	}
 	
 	@Override
@@ -87,13 +83,18 @@ public class ARFFReader extends DataReader {
 		this._fetch_info(input, target_attr_count, support_threshold, internal_dnf);
 	}
 	
-	private void _fetch_info(BufferedReader input,
+	protected void _fetch_info(BufferedReader input,
 							int target_attr_count,
 							double support_threshold,
-							boolean internal_dnf) throws DataFormatException, IOException{		
-		/**
-		 * 1. Parse meta data, get the list of attributes
-		 */
+							boolean internal_dnf) throws DataFormatException, IOException{
+		// Parse meta data, get the list of attributes
+		this.parse_metadata(input, target_attr_count);
+		
+		// Parse data and discretize numeric attributes
+		this.parse_data_discretize(input, support_threshold, internal_dnf);
+	}
+	
+	protected void parse_metadata(BufferedReader input, int target_attr_count) throws IOException{
 		String line;
 		String[] item_list;
 		int attr_id=-1;
@@ -132,12 +133,24 @@ public class ARFFReader extends DataReader {
 		this.attr_count = this.attributes.size();
 		this.target_attr_count = target_attr_count;
 		this.predict_attr_count = this.attr_count - this.target_attr_count;
-		int last_attr_index = this.attr_count-1;
-		
+	}
+	
+	/**
+	 * Parse data section and discretizes all numerical attributes
+	 * @param input
+	 * @param support_threshold
+	 * @param internal_dnf
+	 * @throws NumberFormatException
+	 * @throws IOException
+	 */
+	protected void parse_data_discretize(BufferedReader input,
+										double support_threshold,
+										boolean internal_dnf) throws NumberFormatException, IOException{
 		/**
-		 * 2. Prepare class value to class ID 'value_to_classID', assume that the target attribute is the last one
+		 * 1. Prepare class value to class ID 'value_to_classID', assume that the target attribute is the last one
 		 * It is just used locally for discretizing numeric attributes
 		 */
+		int last_attr_index = this.attr_count-1;
 		IntegerArray classId_of_instances = new IntegerArray();
 		Map<String, Integer> value_to_classID = new HashMap<String, Integer>();
 		int id = 0;
@@ -147,7 +160,7 @@ public class ARFFReader extends DataReader {
 		}
 		
 		/**
-		 * 3. Define where to cache all values of each numeric attribute, but nominal attributes
+		 * 2. Define where to cache all values of each numeric attribute, but nominal attributes
 		 */
 		DoubleArray[] numeric_attr_values = new DoubleArray[attr_count];
 		for(int i=0; i<this.attr_count; i++){
@@ -157,9 +170,10 @@ public class ARFFReader extends DataReader {
 		}
 		
 		/**
-		 * 4. Parse data section, count frequency of distinct values of nominal attributes
+		 * 3. Parse data section, count frequency of distinct values of nominal attributes
 		 * and cache all values of numeric attributes
 		 */
+		String line;
 		String[] value_list;
 		while ((line = input.readLine()) != null) {
 			value_list = line.split(this.delimiter);
@@ -194,7 +208,7 @@ public class ARFFReader extends DataReader {
 	    this.min_sup_count = (int) (this.row_count*support_threshold);
 	    
 	    /**
-	     * 5. Discretize all numeric attributes from the inputs
+	     * 4. Discretize all numeric attributes from the inputs
 	     * 		DoubleArray[] numeric_attr_values
 	     * 		IntegerArray classId_of_instances
 	     * The numeric attribute values at index i are corresponding to classID at index i
@@ -205,7 +219,7 @@ public class ARFFReader extends DataReader {
 	    System.out.println("Discretization time: " + discretization_time);
 	    
 	    /**
-	     * 6. Prepare selector structures
+	     * 5. Prepare selector structures
 	     */
 	    if(internal_dnf){
 	    	this.prepare_selectors_cnf();
@@ -213,41 +227,6 @@ public class ARFFReader extends DataReader {
 	    	this.prepare_selectors();
 	    }
 	}
-	
-	private long discretize_numeric_attributes(DoubleArray[] numeric_attr_values,
-												int class_count,
-												int[] classId_of_instances){
-		long start = System.currentTimeMillis();
-		
-		// Threads
-        IntHolder globalIndex = new IntHolder(0);
-		int thread_count = Math.max(1, Runtime.getRuntime().availableProcessors()/2);
-		Thread[] threads = new Thread[thread_count];
-		
-		for(int i=0; i<thread_count; i++){
-			Discretizer discretizer;
-			switch(this.discret_method){
-				case MDLP:
-					discretizer = new MDLPDiscretizer(class_count, classId_of_instances);
-					break;
-				default:
-					discretizer = new FUSINTERDiscretizer(class_count, classId_of_instances);
-			}
-			threads[i] = new DiscretizationThread(discretizer,
-													this.attributes,
-													numeric_attr_values,
-													globalIndex, i);
-			
-			threads[i].start();
-		}
-		
-		try {
-			for(int i=0; i<thread_count; i++) threads[i].join();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		
-		return System.currentTimeMillis() - start;
-	}
+
 
 }

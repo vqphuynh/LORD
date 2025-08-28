@@ -57,7 +57,7 @@ public class LordRun {
         
         ArgHelperIF arg_helper = new LordArgHelper();
         Arguments arguments = new Arguments();
-        //arguments.input_directory = "data/inputs/nursery";	// uncomment this line for debugging run
+        //arguments.input_directory = "data/inputs/german";	// uncomment this line for debugging run
         arguments.metric_type = METRIC_TYPES.MESTIMATE;
         arguments.metric_arg = 0.1;
         

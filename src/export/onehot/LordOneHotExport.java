@@ -182,7 +182,7 @@ public class LordOneHotExport extends Lord {
 		}		
 				
 		// Export the training examples in one-hot, the same size
-		FileWriter fw = new FileWriter(Paths.get(dir_path, "train_onehot.txt").toString());
+		FileWriter fw = new FileWriter(Paths.get(dir_path, "train_onehot.csv").toString());
 		BufferedWriter writer = new BufferedWriter(fw);
 		StringBuffer sb = new StringBuffer(1024*8);
 		
@@ -206,7 +206,7 @@ public class LordOneHotExport extends Lord {
 		
 		
 		// Export the test examples in one-hot, the same size
-		fw = new FileWriter(Paths.get(dir_path, "test_onehot.txt").toString());
+		fw = new FileWriter(Paths.get(dir_path, "test_onehot.csv").toString());
 		writer = new BufferedWriter(fw);
 		sb = new StringBuffer(1024*8);
 		
@@ -234,7 +234,7 @@ public class LordOneHotExport extends Lord {
 		
 		
 		// Export the rules in one-hot, the same size
-		fw = new FileWriter(Paths.get(dir_path, "rules_onehot.txt").toString());
+		fw = new FileWriter(Paths.get(dir_path, "rules_onehot.csv").toString());
 		writer = new BufferedWriter(fw);
 		
 		for (RuleInfo rule : this.rm.ruleList){

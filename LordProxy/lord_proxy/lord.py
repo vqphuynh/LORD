@@ -13,6 +13,26 @@ def start():
         jpype.startJVM(jpype.getDefaultJVMPath(), "-ea", classpath=[jar_path])
 
 
+def get_datatype(df: pd.DataFrame) -> list[str]:
+    """
+    Return a list of data types of features in the data as 'numeric' or 'string'.
+
+    Parameters
+    ----------
+    df : pd.DataFrame.
+    """
+
+    datatypes = []
+    for col in df.columns:
+        try:
+            pd.to_numeric(df[col], errors="raise")  # test conversion
+            datatypes.append("NUMERIC")
+        except Exception:
+            datatypes.append("NOMINAL")
+    return datatypes
+
+
+
 class InfoBase:
     def __init__(self, learner):
         self.learner = learner
@@ -39,14 +59,17 @@ class LocalRuleClassifier(BaseEstimator, ClassifierMixin):
 
     def fit(self, X, y, file_chanel: bool = False):
         if isinstance(X, pd.DataFrame) and isinstance(y, pd.Series):
+            datatypes = get_datatype(X)
+            datatypes.append("NOMINAL")             # data type of the class attribute
+            datatypes = JArray(JString)(datatypes)  # convert to java string array
             df = pd.concat([X, y], axis=1)
             if file_chanel:
-                # Send data to file          
+                # Send data to file
                 fdesc, path = tempfile.mkstemp(suffix=".csv", text=True)
                 try:
                     df.to_csv(path, sep=",", index=False)
                     os.close(fdesc)
-                    return self.fit_csv(path)
+                    return self.fit_csv(path, datatypes)
                 finally:
                     os.remove(path)                
             else:  
@@ -57,21 +80,23 @@ class LocalRuleClassifier(BaseEstimator, ClassifierMixin):
                 java_bytes = JArray(JByte)(csv_bytes)
                 ByteArrayInputStream = jpype.JClass("java.io.ByteArrayInputStream")
                 input_stream = ByteArrayInputStream(java_bytes)
-                return self.fit_stream(input_stream)
+                return self.fit_stream(input_stream, datatypes)
         else:
             raise TypeError(f"X/y should be Pandas DataFrame/Series. Unsupported type for X and/or y: {type(X)}, {type(y)}")
     
 
-    def fit_stream(self, input_stream):
+    def fit_stream(self, input_stream, datatypes):
         metric_enum = getattr(self.METRIC_TYPES, self.metric)
+        self.learner.declareAttributeTypes(datatypes)
         self.learner.fetch_information(input_stream)
         self.learner.learning(metric_enum, float(self.metric_arg))
         return self
     
 
-    def fit_csv(self, file_path):
+    def fit_csv(self, file_path, datatypes):
         self.train_file = file_path
         metric_enum = getattr(self.METRIC_TYPES, self.metric)
+        self.learner.declareAttributeTypes(datatypes)
         self.learner.fetch_information(file_path)
         self.learner.learning(metric_enum, float(self.metric_arg))
         return self
@@ -91,7 +116,7 @@ class LocalRuleClassifier(BaseEstimator, ClassifierMixin):
                 results.append(str(self.learner.getValue(holder.value)))    # need to convert Java String to Python String
             return results
         else:
-            raise TypeError(f"Unsupported type for X: {type(X)}")
+            raise TypeError(f"X must be a Pandas DataFrame, unsupported type for X: {type(X)}")
         
 
     def get_rule_count(self):

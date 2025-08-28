@@ -10,13 +10,8 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.zip.DataFormatException;
 
-import rl.IntHolder;
 import weka.core.Instance;
 import weka.core.Instances;
-import discretizer.Discretizer;
-import discretizer.Discretizer.DISCRETIZER;
-import discretizer.FUSINTERDiscretizer;
-import discretizer.MDLPDiscretizer;
 
 /**
  * This adaptation class is used to interface with WEKA,
@@ -26,9 +21,12 @@ import discretizer.MDLPDiscretizer;
  */
 public class InstanceReader extends DataReader {
 	
-	private DISCRETIZER discret_method = DISCRETIZER.FUSINTER;
-
 	public InstanceReader(){}
+	
+	@Override
+	public void set_attribute_datatypes(String[] datatypes) {
+		// Do nothing		
+	}
 	
 	/**
 	 * Do nothing for this implementation of the abstract function defined by DataReader class
@@ -202,39 +200,4 @@ public class InstanceReader extends DataReader {
 	    super.prepare_selectors();
 	}
 	
-	private long discretize_numeric_attributes(DoubleArray[] numeric_attr_values,
-												int class_count,
-												int[] classId_of_instances){
-		long start = System.currentTimeMillis();
-		
-		// Threads
-        IntHolder globalIndex = new IntHolder(0);
-		int thread_count = Math.max(1, Runtime.getRuntime().availableProcessors()/2);
-		Thread[] threads = new Thread[thread_count];
-		
-		for(int i=0; i<thread_count; i++){
-			Discretizer discretizer;
-			switch(this.discret_method){
-				case MDLP:
-					discretizer = new MDLPDiscretizer(class_count, classId_of_instances);
-					break;
-				default:
-					discretizer = new FUSINTERDiscretizer(class_count, classId_of_instances);
-			}
-			threads[i] = new DiscretizationThread(discretizer,
-													this.attributes,
-													numeric_attr_values,
-													globalIndex, i);
-			
-			threads[i].start();
-		}
-		
-		try {
-			for(int i=0; i<thread_count; i++) threads[i].join();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		
-		return System.currentTimeMillis() - start;
-	}
 }

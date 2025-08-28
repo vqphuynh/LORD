@@ -2,6 +2,7 @@ import pandas as pd
 from sklearn.model_selection import KFold
 from sklearn.metrics import accuracy_score
 
+import glob
 import os
 import time
 
@@ -9,7 +10,7 @@ from lord_proxy import lord, utilities
 
 
 def run_cross_validate(file_path, target_column, base_dir, cv_folds=10):
-    data = pd.read_csv(file_path, dtype="string")    # LORD wants all values to be String
+    data = pd.read_csv(file_path, dtype='string')       #  Java LORD needs all data as string
 
     # Split features and target
     X = data.drop(columns=[target_column])
@@ -44,6 +45,9 @@ def run_cross_validate(file_path, target_column, base_dir, cv_folds=10):
         runtimes.append(end-start)
         rule_counts.append(model.get_rule_count())
         rule_lengths.append(model.get_avg_rule_length())
+        # utilities.store_data_split(X_train, y_train, os.path.join(base_dir, f"train_{fold_idx:02d}.csv"))
+        # utilities.store_data_split(X_test, y_test, os.path.join(base_dir, f"test_{fold_idx:02d}.csv"))
+        # utilities.store_prediction(y_test, y_pred, os.path.join(output_dir, f"prediction_{fold_idx:02d}.csv"))
     
     utilities.store_result(os.path.join(base_dir, "results.txt"), results)
 
@@ -51,7 +55,8 @@ def run_cross_validate(file_path, target_column, base_dir, cv_folds=10):
 
 ######################
 lord.start()
-file_paths = ["data/005.csv", "data/016.csv"]
+file_paths = glob.glob("data/**/*.csv", recursive=True)
+# file_paths = ["data/005.csv", "data/016.csv", "data/german.csv"]
 for file_path in file_paths:
     filename = os.path.basename(file_path)
     file_name_no_ext = os.path.splitext(filename)[0]

@@ -75,7 +75,12 @@ public abstract class RuleLearner {
 	protected List<Integer> classIDs;	// all class IDs
     protected int default_classID;		// majority classID
     
-	
+    protected String[] attribute_types;	// specify data type for each attribute in case CSV format
+    
+    public void declareAttributeTypes(String[] attribute_types){
+    	this.attribute_types = attribute_types;
+    }
+    
 	public List<Attribute> getAttributes(){
 		return this.attributes;
 	}
@@ -275,13 +280,18 @@ public abstract class RuleLearner {
     	DataReader dr = null;
     	if (this.data_stream != null){
     		dr = new CSVReader();
+    		if (this.attribute_types != null){
+    			dr.set_attribute_datatypes(this.attribute_types);
+    		}
     		dr.fetch_info(this.data_stream, this.target_attr_count, 0.001, false);
     	}else if (this.train_filename != null){
     		dr = DataReader.getDataReader(this.train_filename);
     		if(dr == null){
-        		System.out.println("Can not recognize the file type.");
-        		return 0;
+    			throw new DataFormatException("Can not recognize the file type.");
         	}
+    		if (this.attribute_types != null){
+    			dr.set_attribute_datatypes(this.attribute_types);
+    		}
     		dr.fetch_info(this.train_filename, this.target_attr_count, 0.001, false);
     	}else{
     		System.out.println("No train data");

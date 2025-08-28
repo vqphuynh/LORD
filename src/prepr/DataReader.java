@@ -14,6 +14,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.DataFormatException;
 
+import rl.IntHolder;
+import discretizer.Discretizer;
+import discretizer.Discretizer.DISCRETIZER;
+import discretizer.FUSINTERDiscretizer;
+import discretizer.MDLPDiscretizer;
+
 public abstract class DataReader {
 	public static enum DATA_FORMATS {CSV, ARFF};
 	
@@ -25,10 +31,18 @@ public abstract class DataReader {
 	
 	protected BufferedReader input;
 	
+//	protected DISCRETIZER discret_method = DISCRETIZER.MDLP;
+	protected DISCRETIZER discret_method = DISCRETIZER.FUSINTER;
+	
 	/**
 	 * List of attributes
 	 */
 	protected List<Attribute> attributes = new ArrayList<Attribute>();
+	
+	/**
+	 * List of data types of attributes, used for CSV case
+	 */
+	protected Attribute.DATA_TYPE[] attribute_datatypes = null;
 	
 	/**
 	 * List of atom selectors (flatten list)
@@ -110,6 +124,9 @@ public abstract class DataReader {
 	public int getTargetSelectorCount() {
 		return target_selector_count;
 	}
+	
+	
+	public abstract void set_attribute_datatypes(String[] datatypes);
 	
 	/**
 	 * @param datasource_filename
@@ -450,4 +467,43 @@ public abstract class DataReader {
 		
 		return id_record;
 	}
+
+
+	protected long discretize_numeric_attributes(DoubleArray[] numeric_attr_values,
+												int class_count,
+												int[] classId_of_instances){
+		long start = System.currentTimeMillis();
+		
+		// Threads
+        IntHolder globalIndex = new IntHolder(0);
+		int thread_count = Math.max(1, Runtime.getRuntime().availableProcessors()/2);
+		Thread[] threads = new Thread[thread_count];
+		
+		for(int i=0; i<thread_count; i++){
+			Discretizer discretizer;
+			switch(this.discret_method){
+				case MDLP:
+					discretizer = new MDLPDiscretizer(class_count, classId_of_instances);
+					break;
+				default:
+					discretizer = new FUSINTERDiscretizer(class_count, classId_of_instances);
+			}
+			threads[i] = new DiscretizationThread(discretizer,
+													this.attributes,
+													numeric_attr_values,
+													globalIndex, i);
+			
+			threads[i].start();
+		}
+		
+		try {
+			for(int i=0; i<thread_count; i++) threads[i].join();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		return System.currentTimeMillis() - start;
+	}
+	
+	
 }
