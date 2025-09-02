@@ -4,7 +4,7 @@ import tempfile
 import os
 from sklearn.base import BaseEstimator, ClassifierMixin
 import jpype
-from jpype import JByte, JArray, JString
+from jpype import JByte, JArray, JString, JInt
 
 def start():
     print(os.getcwd())
@@ -29,23 +29,7 @@ def get_datatype(df: pd.DataFrame) -> list[str]:
             datatypes.append("NUMERIC")
         except Exception:
             datatypes.append("NOMINAL")
-    return datatypes
-
-
-
-class InfoBase:
-    def __init__(self, learner):
-        self.learner = learner
-        self.selector_nlists = learner.getSelectorNlists()
-        self.constructing_selectors = list(learner.getConstructingSelectors())
-        self.selector_id_records = learner.getSelectorIDRecords()
-        self.class_ids = list(learner.getClassIDs())
-        self.RuleSearcher = jpype.JClass("rl.RuleSearcher")
-        self.INlist = jpype.JClass("rl.INlist")
-
-    def support_count(self, selector_ids):
-        nlist_array = jpype.JArray(self.INlist)([self.selector_nlists[i] for i in selector_ids])
-        return self.RuleSearcher.calculate_nlist_direct(nlist_array).supportCount()
+    return datatypes    
     
 
 class LocalRuleClassifier(BaseEstimator, ClassifierMixin):
@@ -69,7 +53,7 @@ class LocalRuleClassifier(BaseEstimator, ClassifierMixin):
                 try:
                     df.to_csv(path, sep=",", index=False)
                     os.close(fdesc)
-                    return self.fit_csv(path, datatypes)
+                    return self._fit_csv(path, datatypes)
                 finally:
                     os.remove(path)                
             else:  
@@ -80,12 +64,12 @@ class LocalRuleClassifier(BaseEstimator, ClassifierMixin):
                 java_bytes = JArray(JByte)(csv_bytes)
                 ByteArrayInputStream = jpype.JClass("java.io.ByteArrayInputStream")
                 input_stream = ByteArrayInputStream(java_bytes)
-                return self.fit_stream(input_stream, datatypes)
+                return self._fit_stream(input_stream, datatypes)
         else:
             raise TypeError(f"X/y should be Pandas DataFrame/Series. Unsupported type for X and/or y: {type(X)}, {type(y)}")
     
 
-    def fit_stream(self, input_stream, datatypes):
+    def _fit_stream(self, input_stream, datatypes):
         metric_enum = getattr(self.METRIC_TYPES, self.metric)
         self.learner.declareAttributeTypes(datatypes)
         self.learner.fetch_information(input_stream)
@@ -93,7 +77,7 @@ class LocalRuleClassifier(BaseEstimator, ClassifierMixin):
         return self
     
 
-    def fit_csv(self, file_path, datatypes):
+    def _fit_csv(self, file_path, datatypes):
         self.train_file = file_path
         metric_enum = getattr(self.METRIC_TYPES, self.metric)
         self.learner.declareAttributeTypes(datatypes)
@@ -147,6 +131,7 @@ class LocalRuleClassifier(BaseEstimator, ClassifierMixin):
         }
     
 
+
 class LocalRuleClassifier_OneHotExporter(LocalRuleClassifier):
     def __init__(self, metric="MESTIMATE", metric_arg=0.1):
         self.metric = metric
@@ -163,3 +148,64 @@ class LocalRuleClassifier_OneHotExporter(LocalRuleClassifier):
         else:
             j_strings = jpype.JObject(None, JArray)
         self.learner.export_onehot(dir_path, j_strings)
+
+
+
+class InfoBase():
+    def __init__(self):
+        self.Supporter = jpype.JClass("rl.Supporter")
+        self.learner = jpype.JClass("rl.eg.Lord")()
+
+    def feed(self, X, y, file_chanel: bool = False):
+        if isinstance(X, pd.DataFrame) and isinstance(y, pd.Series):
+            datatypes = get_datatype(X)
+            datatypes.append("NOMINAL")             # data type of the class attribute
+            datatypes = JArray(JString)(datatypes)  # convert to java string array
+            df = pd.concat([X, y], axis=1)
+            if file_chanel:
+                # Send data to file
+                fdesc, path = tempfile.mkstemp(suffix=".csv", text=True)
+                try:
+                    df.to_csv(path, sep=",", index=False)
+                    os.close(fdesc)
+                    return self._feed_csv(path, datatypes)
+                finally:
+                    os.remove(path)                
+            else:  
+                # Send data in memory to Lord via a stream
+                buffer = StringIO()
+                df.to_csv(buffer, index=False)
+                csv_bytes = buffer.getvalue().encode('utf-8')
+                java_bytes = JArray(JByte)(csv_bytes)
+                ByteArrayInputStream = jpype.JClass("java.io.ByteArrayInputStream")
+                input_stream = ByteArrayInputStream(java_bytes)
+                return self._feed_stream(input_stream, datatypes)
+        else:
+            raise TypeError(f"X/y should be Pandas DataFrame/Series. Unsupported type for X and/or y: {type(X)}, {type(y)}")
+    
+
+    def _feed_stream(self, input_stream, datatypes):
+        self.learner.declareAttributeTypes(datatypes)
+        self.learner.fetch_information(input_stream)
+        self.selector_nlists = self.learner.getSelectorNlist()
+        return self
+    
+
+    def _feed_csv(self, file_path, datatypes):
+        self.train_file = file_path
+        self.learner.declareAttributeTypes(datatypes)
+        self.learner.fetch_information(file_path)
+        self.selector_nlists = self.learner.getSelectorNlist()
+        return self
+    
+
+    def support_count(self, selector_ids: list) -> int:
+        nlist = self.selector_nlists[selector_ids[0]]
+        for i in range(1, len(selector_ids)):
+            nlist = self.Supporter.create_nlist(nlist, self.selector_nlists[selector_ids[i]])
+        return nlist.supportCount()
+    
+
+    def convert_features_to_ids(self, features: list[str]) -> list[int]:
+        buffer = JArray(JInt)(len(features))
+        return self.learner.convert_values_to_selectorIDs(features, buffer)

@@ -33,6 +33,7 @@ public abstract class DataReader {
 	
 //	protected DISCRETIZER discret_method = DISCRETIZER.MDLP;
 	protected DISCRETIZER discret_method = DISCRETIZER.FUSINTER;
+	protected boolean must_discretize;
 	
 	/**
 	 * List of attributes
