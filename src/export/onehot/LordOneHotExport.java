@@ -21,6 +21,7 @@ import prepr.DataReader;
 import prepr.Selector;
 import rl.IntHolder;
 import rl.PPCTree;
+import rl.RuleComparator;
 import rl.RuleInfo;
 import rl.eg.Lord;
 
@@ -58,7 +59,7 @@ public class LordOneHotExport extends Lord {
 	
 	public int[] predict(String[] value_record, IntHolder predicted_classID){
 		// conduct a record of distinct value IDs for the test example
-		int[] id_buffer = new int[this.selector_count];
+		int[] id_buffer = new int[this.attr_count];
 		int [] test_example = this.convert_values_to_distinctValueIDs(value_record, id_buffer);
 		this.test_examples.add(test_example);
 		
@@ -67,7 +68,7 @@ public class LordOneHotExport extends Lord {
 	
 	public int[] predict_noclass(String[] value_record, IntHolder predicted_classID){
 		// conduct a record of distinct value IDs for the test example
-		int[] id_buffer = new int[this.selector_count];
+		int[] id_buffer = new int[this.attr_count];
 		int [] test_example = this.convert_values_to_distinctValueIDs(value_record, id_buffer);
 		this.test_examples.add(test_example);
 		
@@ -132,18 +133,7 @@ public class LordOneHotExport extends Lord {
 		
 	    return System.currentTimeMillis() - start;
 	}
-	
-	
-	private void feed_true_class(String[] y_test){
-		Attribute class_attr = this.attributes.get(this.attr_count-1); // class attribute at the last position
-		int last_pos = this.test_examples.get(0).length-1;
-		int idx = 0;
-		for(int[] test_example : this.test_examples){
-			test_example[last_pos] = class_attr.getSelector(y_test[idx]).distinctValueID;
-			idx ++;
-		}
-	}
-	
+		
 	
 	/**
 	 * EXPORT ONE-HOT FOR TRAINING EXAMPLES AND RULES
@@ -210,25 +200,50 @@ public class LordOneHotExport extends Lord {
 		writer = new BufferedWriter(fw);
 		sb = new StringBuffer(1024*8);
 		
-		if (y_test != null){
-			this.feed_true_class(y_test);
+		if (y_test == null){
+			// test example is with the class
+			for (int[] id_record : this.test_examples){
+				int[] onehot_record = new int[this.distinct_value_count];
+				for(int id : id_record){
+					// id is distinctValueID
+					SelectorOneHot soh = soh_list_1[id];
+					onehot_record[soh.onehot_offset + soh.onehot] = 1;
+				}
+				sb.setLength(0);
+				for(int bit : onehot_record){
+					sb.append(bit).append(',');
+				}
+				sb.setLength(sb.length()-1);	// remove the last ','
+				sb.append('\n');
+				writer.write(sb.toString());
+			}
+		}else{
+			// test example is without the class
+			Attribute class_attr = this.attributes.get(this.attr_count-1); // class attribute at the last position			
+			int ex_idx = 0;
+			for (int[] id_record : this.test_examples){
+				int[] onehot_record = new int[this.distinct_value_count];
+				for(int id : id_record){
+					// id is distinctValueID
+					SelectorOneHot soh = soh_list_1[id];
+					onehot_record[soh.onehot_offset + soh.onehot] = 1;
+				}
+				// one-hot encode for the class
+				SelectorOneHot soh = soh_list_1[class_attr.getSelector(y_test[ex_idx]).distinctValueID];
+				onehot_record[soh.onehot_offset + soh.onehot] = 1;
+				ex_idx ++;
+				
+				sb.setLength(0);
+				for(int bit : onehot_record){
+					sb.append(bit).append(',');
+				}
+				sb.setLength(sb.length()-1);	// remove the last ','
+				sb.append('\n');
+				writer.write(sb.toString());
+			}
 		}
 		
-		for (int[] id_record : this.test_examples){
-			int[] onehot_record = new int[this.distinct_value_count];
-			for(int id : id_record){
-				// id is distinctValueID
-				SelectorOneHot soh = soh_list_1[id];
-				onehot_record[soh.onehot_offset + soh.onehot] = 1;
-			}
-			sb.setLength(0);
-			for(int bit : onehot_record){
-				sb.append(bit).append(',');
-			}
-			sb.setLength(sb.length()-1);	// remove the last ','
-			sb.append('\n');
-			writer.write(sb.toString());
-		}
+		
 		writer.flush();
 		writer.close();
 		
@@ -237,24 +252,37 @@ public class LordOneHotExport extends Lord {
 		fw = new FileWriter(Paths.get(dir_path, "rules_onehot.csv").toString());
 		writer = new BufferedWriter(fw);
 		
-		for (RuleInfo rule : this.rm.ruleList){
-			int[] onehot_record = new int[this.distinct_value_count];
-			
-			for(int id : rule.body){
-				// id is selectorID
-				SelectorOneHot soh = soh_list_2[id];
+		// header row
+		sb.setLength(0);
+		for(int i=0; i<this.distinct_value_count; i++){
+			sb.append(',');
+		}
+		sb.append("class, heuristic, p, cover\n");
+		writer.write(sb.toString());
+		
+		List<List<RuleInfo>> grouped_rules = this.group_rules(this.rm.ruleList, soh_list_2, this.classIDs.size());
+		for (List<RuleInfo> sublist : grouped_rules){
+			for(RuleInfo rule : sublist){
+				int[] onehot_record = new int[this.distinct_value_count];
+				for(int id : rule.body){
+					// id is selectorID
+					SelectorOneHot soh = soh_list_2[id];
+					onehot_record[soh.onehot_offset + soh.onehot] = 1;
+				}
+				SelectorOneHot soh = soh_list_2[rule.headID];
 				onehot_record[soh.onehot_offset + soh.onehot] = 1;
+				
+				sb.setLength(0);
+				for(int bit : onehot_record){
+					sb.append(bit).append(',');
+				}
+				// rule info
+				sb.append(soh_list_2[rule.headID].onehot).append(',');	// rule class: 0, 1, 2, ...
+				sb.append(rule.heuristic_value).append(',');
+				sb.append(rule.p).append(',');
+				sb.append(rule.n_plus_p).append('\n');
+				writer.write(sb.toString());
 			}
-			SelectorOneHot soh = soh_list_2[rule.headID];
-			onehot_record[soh.onehot_offset + soh.onehot] = 1;
-			
-			sb.setLength(0);
-			for(int bit : onehot_record){
-				sb.append(bit).append(',');
-			}
-			sb.setLength(sb.length()-1);	// remove the last ','
-			sb.append('\n');
-			writer.write(sb.toString());
 		}
 		writer.flush();
 		writer.close();
@@ -280,5 +308,23 @@ public class LordOneHotExport extends Lord {
 		}
 		writer.flush();
 		writer.close();
+	}
+	
+	
+	private List<List<RuleInfo>> group_rules(List<RuleInfo> rules, SelectorOneHot[] selector_order, int n_classes){
+		// This function groups rules based on the rule head of rules.
+		List<List<RuleInfo>> grouped_rules = new ArrayList<List<RuleInfo>>();
+		for (int i=0; i<n_classes; i++) {grouped_rules.add(new ArrayList<RuleInfo>());}
+		
+		for (RuleInfo rule : rules){
+			int class_index = selector_order[rule.headID].onehot;
+			List<RuleInfo> sublist = grouped_rules.get(class_index);
+			sublist.add(rule);
+		}
+		RuleComparator c = new RuleComparator();
+		for(List<RuleInfo> sublist : grouped_rules){
+			sublist.sort(c); 
+		}
+		return grouped_rules;
 	}
 }

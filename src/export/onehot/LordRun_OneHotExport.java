@@ -51,7 +51,8 @@ public class LordRun_OneHotExport {
 	
 	public static void main(String[] args) throws Exception {
 		String[] input_directories = new String[]{
-				"data/inputs/german",
+				"data/inputs/car",
+//				"data/inputs/german",
 //        		"data/inputs/mushroom",
 //        		"data/inputs/flo_datasets/5",
 //				"data/inputs/flo_datasets/16",

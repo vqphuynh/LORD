@@ -114,6 +114,7 @@ public class Lord extends RuleLearner{
 		return example;
     }
     
+    
     @Override
 	public int[] predict_noclass(String[] value_record, IntHolder predicted_classID) {
     	int[] id_buffer = new int[this.attr_count];
@@ -122,8 +123,8 @@ public class Lord extends RuleLearner{
     	// convert value_record to a record of selectorIDs
 		example = this.convert_values_to_selectorIDs(value_record, id_buffer);
 		
-		if(example.length < 2) {
-			// the new example is without body, just its class
+		if(example.length == 0) {
+			// the new example is without body
 			predicted_classID.value = this.rm.defaultClassID;
 			
 			// To print prediction details
@@ -144,6 +145,7 @@ public class Lord extends RuleLearner{
 		
 		return example;
 	}
+   
     
     /**
      * Prediction method of CMAR based on Weighted Chi-Square.

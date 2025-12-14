@@ -56,7 +56,7 @@ def run_cross_validate(file_path, target_column, base_dir, cv_folds=10):
 ######################
 lord.start()
 file_paths = glob.glob("data/**/*.csv", recursive=True)
-# file_paths = ["data/005.csv", "data/016.csv", "data/german.csv"]
+# file_paths = ["data/005.csv", "data/016.csv"]
 for file_path in file_paths:
     filename = os.path.basename(file_path)
     file_name_no_ext = os.path.splitext(filename)[0]
