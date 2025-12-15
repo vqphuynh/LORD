@@ -228,9 +228,17 @@ public class LordOneHotExport extends Lord {
 					SelectorOneHot soh = soh_list_1[id];
 					onehot_record[soh.onehot_offset + soh.onehot] = 1;
 				}
+				
 				// one-hot encode for the class
-				SelectorOneHot soh = soh_list_1[class_attr.getSelector(y_test[ex_idx]).distinctValueID];
-				onehot_record[soh.onehot_offset + soh.onehot] = 1;
+				Selector s = class_attr.getSelector(y_test[ex_idx]);
+				if (s != null){
+					// The stupid case (s == null) still happens when a class found in test set but not in train set.
+					// Soybean dataset is the case: there is only one example with class '2-4-d-injury'.
+					// And in some split ways, the example in the test set 
+					SelectorOneHot soh = soh_list_1[s.distinctValueID];
+					onehot_record[soh.onehot_offset + soh.onehot] = 1;
+				}
+				
 				ex_idx ++;
 				
 				sb.setLength(0);
